@@ -27,6 +27,19 @@ public:
 };
 
 /**
+ * Creates a list of all stations in game.
+ * @api ai game
+ * @ingroup ScriptList
+ */
+class ScriptStationList_All : public ScriptList {
+public:
+	/**
+	 * @param station_type The type of station to make a list of stations for.
+	 */
+	ScriptStationList_All(ScriptStation::StationType station_type);
+};
+
+/**
  * Creates a list of stations associated with cargo at a station. This is very generic. Use the
  * subclasses for all practical purposes.
  * @api ai game

@@ -124,6 +124,15 @@ public:
 		TOWN_GROWTH_NORMAL = 0x10000, ///< Use default town growth algorithm instead of custom growth rate.
 	};
 
+	enum HouseSizes {
+		HOUSE_SIZE_NONE = 0,
+		HOUSE_SIZE_1x1 = 1U << 0,
+		HOUSE_SIZE_2x1 = 1U << 1,
+		HOUSE_SIZE_1x2 = 1U << 2,
+		HOUSE_SIZE_2x2 = 1U << 3,
+		HOUSE_SIZE_2x2_STADIUM = 1U << 4 | 1U << 7,
+	};
+
 	/**
 	 * Gets the number of towns.
 	 * @return The number of towns.
@@ -182,6 +191,30 @@ public:
 	 * @return The number of houses.
 	 */
 	static SQInteger GetHouseCount(TownID town_id);
+
+	/**
+	 * Checks if this tile has a house.
+	 * @param tile The tile to check.
+	 * @pre ScriptMap::IsValidTile(tile).
+	 * @return If the tile has a house.
+	 */
+	static bool IsHouseTile(TileIndex tile);
+
+	/**
+	 * Checks if this tile has a house that is completed.
+	 * @param tile The tile to check.
+	 * @pre ScriptMap::IsValidTile(tile).
+	 * @return If the tile has a house that is completed.
+	 */
+	static bool IsHouseCompleted(TileIndex tile);
+
+	static SQInteger GetHousePopulation(TileIndex tile);
+
+	static TownID GetHouseTown(TileIndex tile);
+
+	static HouseSizes GetHouseSize(TileIndex tile);
+	static bool IsPartialHouseTile(TileIndex tile);
+	static TileIndex GetHousePrimaryTile(TileIndex tile);
 
 	/**
 	 * Gets the location of the town.

@@ -13,6 +13,7 @@
 #include "script_error.hpp"
 #include "script_controller.hpp"
 #include "../../town.h"
+#include "../../town_map.h"
 #include "../../townname_func.h"
 #include "../../string_func.h"
 #include "../../strings_func.h"
@@ -77,6 +78,62 @@
 	if (!IsValidTown(town_id)) return -1;
 	const Town *t = ::Town::Get(town_id);
 	return t->cache.num_houses;
+}
+
+/* static */ bool ScriptTown::IsHouseTile(TileIndex tile)
+{
+	if (!IsValidTile(tile)) return false;
+
+	return IsTileType(tile, MP_HOUSE);
+}
+
+/* static */ bool ScriptTown::IsHouseCompleted(TileIndex tile)
+{
+	if (!IsHouseTile(tile)) return false;
+	
+	return ::IsHouseCompleted(tile);
+}
+
+/* static */ SQInteger ScriptTown::GetHousePopulation(TileIndex tile)
+{
+	if (!IsHouseTile(tile)) return 0;
+	if (!::IsHouseCompleted(tile)) return 0;
+
+	HouseSpec *hs = HouseSpec::Get(::GetHouseType(tile));
+
+	return hs->population;
+}
+
+/* static */ TownID ScriptTown::GetHouseTown(TileIndex tile)
+{
+	if (!IsHouseTile(tile)) return false;
+
+	return GetTownIndex(tile);
+}
+
+/* static */ ScriptTown::HouseSizes ScriptTown::GetHouseSize(TileIndex tile)
+{
+	if (!IsHouseTile(tile)) return (ScriptTown::HouseSizes)0;
+
+	HouseSpec *hs = HouseSpec::Get(::GetHouseType(tile));
+
+	return (ScriptTown::HouseSizes)hs->building_flags;
+}
+
+/* static */ bool ScriptTown::IsPartialHouseTile(TileIndex tile)
+{
+	return GetHousePrimaryTile(tile) != tile;
+}
+
+/* static */ TileIndex ScriptTown::GetHousePrimaryTile(TileIndex tile)
+{
+	if (!IsHouseTile(tile)) return INVALID_TILE;
+
+	TileIndex primary_tile = tile;
+	HouseID hid = GetHouseType(tile);
+	primary_tile += GetHouseNorthPart(hid);
+
+	return primary_tile;
 }
 
 /* static */ TileIndex ScriptTown::GetLocation(TownID town_id)

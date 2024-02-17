@@ -24,6 +24,13 @@ ScriptStationList::ScriptStationList(ScriptStation::StationType station_type)
 	}
 }
 
+ScriptStationList_All::ScriptStationList_All(ScriptStation::StationType station_type)
+{
+	for (Station *st : Station::Iterate()) {
+		if ((st->facilities & station_type) != 0) this->AddItem(st->index);
+	}
+}
+
 ScriptStationList_Vehicle::ScriptStationList_Vehicle(VehicleID vehicle_id)
 {
 	if (!ScriptVehicle::IsPrimaryVehicle(vehicle_id)) return;
