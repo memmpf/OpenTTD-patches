@@ -160,7 +160,6 @@ STR_ABBREV_TOFFEE                                               :ٹافی
 STR_ABBREV_BATTERIES                                            :سیل
 STR_ABBREV_PLASTIC                                              :پلاسٹِک
 STR_ABBREV_FIZZY_DRINKS                                         :سوڈا واٹر
-STR_ABBREV_NONE                                                 :نہیں
 STR_ABBREV_ALL                                                  :تمام
 
 # 'Mode' of transport for cargoes
@@ -218,6 +217,10 @@ STR_UNITS_FORCE_SI                                              :{NBSP}{DECIMAL}
 
 STR_UNITS_HEIGHT_IMPERIAL                                       :{NBSP}{DECIMAL} فٹ
 STR_UNITS_HEIGHT_SI                                             :{NBSP}{DECIMAL} میٹر
+
+# Time units used in string control characters
+
+
 
 # Common window strings
 STR_LIST_FILTER_OSKTITLE                                        :{BLACK} چھان کے الفاظ درج کیجیئے
@@ -364,7 +367,7 @@ STR_SCENEDIT_FILE_MENU_SEPARATOR                                :
 STR_SCENEDIT_FILE_MENU_QUIT                                     :باہر نکلو
 
 # Settings menu
-###length 15
+###length 16
 STR_SETTINGS_MENU_GAME_OPTIONS                                  :کھیل کے اختیارات
 STR_SETTINGS_MENU_NEWGRF_SETTINGS                               :NewGRF اختیارات
 STR_SETTINGS_MENU_TRANSPARENCY_OPTIONS                          :Transparency کے اختیارات
@@ -379,30 +382,24 @@ STR_SETTINGS_MENU_TRANSPARENT_BUILDINGS                         :شفاف عما
 STR_SETTINGS_MENU_TRANSPARENT_SIGNS                             :شفاف اشارے
 
 # File menu
-###length 5
 STR_FILE_MENU_SAVE_GAME                                         :کھیل محفوظ کرو
 STR_FILE_MENU_LOAD_GAME                                         :کھیل دوبارہ چڑھاو
 STR_FILE_MENU_QUIT_GAME                                         :کھیل چھوڑ دو
-STR_FILE_MENU_SEPARATOR                                         :
 STR_FILE_MENU_EXIT                                              :باہر نکلو
 
 # Map menu
-###length 4
 STR_MAP_MENU_MAP_OF_WORLD                                       :دنیا کا نقشھ
 STR_MAP_MENU_EXTRA_VIEWPORT                                     :اضافی منظر
 STR_MAP_MENU_SIGN_LIST                                          :اشاروں کی فھرست
 
 # Town menu
-###length 2
 STR_TOWN_MENU_TOWN_DIRECTORY                                    :کتبِ قصبھ جات
 STR_TOWN_MENU_FOUND_TOWN                                        :قصبھ قائم کیجیئے
 
 # Subsidies menu
-###length 1
 STR_SUBSIDIES_MENU_SUBSIDIES                                    :امداد
 
 # Graph menu
-###length 6
 STR_GRAPH_MENU_OPERATING_PROFIT_GRAPH                           :عملی منافع مخطط
 STR_GRAPH_MENU_INCOME_GRAPH                                     :آمدنی مخطط
 STR_GRAPH_MENU_DELIVERED_CARGO_GRAPH                            :پھنچائے گئے سامان کا مخطط
@@ -411,54 +408,43 @@ STR_GRAPH_MENU_COMPANY_VALUE_GRAPH                              :کمپنی کی
 STR_GRAPH_MENU_CARGO_PAYMENT_RATES                              :سامان کی ادایگی کا تناسب
 
 # Company league menu
-###length 3
 STR_GRAPH_MENU_COMPANY_LEAGUE_TABLE                             :کمپنیوں کے گروپ کی فہرست
 STR_GRAPH_MENU_DETAILED_PERFORMANCE_RATING                      :تفصیلی عملی درجہ بندی
 
 # Industry menu
-###length 3
 STR_INDUSTRY_MENU_INDUSTRY_DIRECTORY                            :کتبِ صنعت
 STR_INDUSTRY_MENU_FUND_NEW_INDUSTRY                             :نئ سنعت تعمیر کیجیئے
 
 # URailway construction menu
-###length 4
 STR_RAIL_MENU_RAILROAD_CONSTRUCTION                             :راھ آھن پٹری کی تعمیر
 STR_RAIL_MENU_ELRAIL_CONSTRUCTION                               :برقی راھ آھن پٹری کی تعمیر
 STR_RAIL_MENU_MONORAIL_CONSTRUCTION                             :وحید راھ کی تعمیر
 STR_RAIL_MENU_MAGLEV_CONSTRUCTION                               :علناظیس کی تعمیر
 
 # Road construction menu
-###length 2
 STR_ROAD_MENU_ROAD_CONSTRUCTION                                 :سڑک کی تعمیر
 STR_ROAD_MENU_TRAM_CONSTRUCTION                                 :ٹرام وے کی تعمیر
 
 # Waterways construction menu
-###length 1
 STR_WATERWAYS_MENU_WATERWAYS_CONSTRUCTION                       :نھر کی تعمیر
 
 # Aairport construction menu
-###length 1
 STR_AIRCRAFT_MENU_AIRPORT_CONSTRUCTION                          :ھواگاھ کی تعمیر
 
 # Landscaping menu
-###length 3
 STR_LANDSCAPING_MENU_LANDSCAPING                                :منظر کشی
 STR_LANDSCAPING_MENU_PLANT_TREES                                :درخت لگایئے
 STR_LANDSCAPING_MENU_PLACE_SIGN                                 :اشارھ لگایے
 
 # Music menu
-###length 1
 STR_TOOLBAR_SOUND_MUSIC                                         :آواز و موسیقی
 
 # Message menu
-###length 3
 STR_NEWS_MENU_LAST_MESSAGE_NEWS_REPORT                          :پچھلا پیعام/ خبر
 STR_NEWS_MENU_MESSAGE_HISTORY_MENU                              :تاریخِ پیغامات
 
 # About menu
-###length 12
 STR_ABOUT_MENU_LAND_BLOCK_INFO                                  :زمینی رقبہ کی معلومات
-STR_ABOUT_MENU_SEPARATOR                                        :
 STR_ABOUT_MENU_TOGGLE_CONSOLE                                   :حائطھ تدویم
 STR_ABOUT_MENU_AI_DEBUG                                         :AI debug
 STR_ABOUT_MENU_SCREENSHOT                                       :اسکرین کی تصویر
@@ -466,24 +452,6 @@ STR_ABOUT_MENU_ABOUT_OPENTTD                                    :Open TTD کے �
 STR_ABOUT_MENU_SPRITE_ALIGNER                                   :sprite صف بندھ
 STR_ABOUT_MENU_TOGGLE_BOUNDING_BOXES                            :احاطہ کرنے والے ڈبوں کی تدویم کیجئیے
 STR_ABOUT_MENU_TOGGLE_DIRTY_BLOCKS                              :گندے بلاکوں کا رنگ تبدیل کرو
-
-# Place in highscore window
-###length 15
-STR_ORDINAL_NUMBER_1ST                                          :پھل
-STR_ORDINAL_NUMBER_2ND                                          :دوسر
-STR_ORDINAL_NUMBER_3RD                                          :تیسر
-STR_ORDINAL_NUMBER_4TH                                          :چوتھ
-STR_ORDINAL_NUMBER_5TH                                          :پانچھو
-STR_ORDINAL_NUMBER_6TH                                          :چھٹ
-STR_ORDINAL_NUMBER_7TH                                          :ساتو
-STR_ORDINAL_NUMBER_8TH                                          :آٹھو
-STR_ORDINAL_NUMBER_9TH                                          :نو
-STR_ORDINAL_NUMBER_10TH                                         :دسو
-STR_ORDINAL_NUMBER_11TH                                         :گیارھو
-STR_ORDINAL_NUMBER_12TH                                         :بارھو
-STR_ORDINAL_NUMBER_13TH                                         :تیرھو
-STR_ORDINAL_NUMBER_14TH                                         :چودھو
-STR_ORDINAL_NUMBER_15TH                                         :پندھرو
 
 ###length 31
 STR_DAY_NUMBER_1ST                                              :پھل
@@ -560,8 +528,8 @@ STR_GRAPH_CARGO_DELIVERED_CAPTION                               :{WHITE} شما�
 STR_GRAPH_COMPANY_PERFORMANCE_RATINGS_CAPTION                   :{WHITE} کمپنی کی کارکردگی کی درج بندی (حدِ درجھ = 1000)
 STR_GRAPH_COMPANY_VALUES_CAPTION                                :{WHITE}کمپنی کی مالیت
 
+
 STR_GRAPH_CARGO_PAYMENT_RATES_CAPTION                           :{WHITE} سامان کی ادایگی کا تناسب
-STR_GRAPH_CARGO_PAYMENT_RATES_X_LABEL                           :{TINY_FONT}{BLACK} حرکت میں ایام
 STR_GRAPH_CARGO_PAYMENT_RATES_TITLE                             :{TINY_FONT}{BLACK} سامان کی دس اکائیات (یآ 10،000 لیٹر)، 20 چکور تک لے جانے کی ادائیگی
 STR_GRAPH_CARGO_ENABLE_ALL                                      :{TINY_FONT} {BLACK} سب کو قابل کیجیئے
 STR_GRAPH_CARGO_DISABLE_ALL                                     :{TINY_FONT} {BLACK} سب کو نا کارہ کیجیئے
@@ -608,11 +576,9 @@ STR_PERFORMANCE_DETAIL_CARGO                                    :{BLACK} سام�
 STR_PERFORMANCE_DETAIL_MONEY                                    :{BLACK} رقم:
 STR_PERFORMANCE_DETAIL_LOAN                                     :{BLACK} قرضہ:
 STR_PERFORMANCE_DETAIL_TOTAL                                    :{BLACK} مکمل:
+###next-name-looks-similar
 
-###length 10
-STR_PERFORMANCE_DETAIL_VEHICLES_TOOLTIP                         :{BLACK} پچھلے سال نفعدار ناقل کی تعداد؛ جس میں گاڑیاں، قطار، بحری جہاز، ہوائی جہاز وغعرہ شامل ہیں
 STR_PERFORMANCE_DETAIL_STATIONS_TOOLTIP                         :{BLACK} تعداد برائے حالیہ مرمت شدہ مستقر حصے۔ مستقر کا ہر حصہ گنا جاتا ہے۔ مثلا پٹری مستقر، بس اسٹاپ، ہوائی اڈہ وغیرہ، خواہ وہ ایک ساتھ جڑے بھی ہوں۔
-STR_PERFORMANCE_DETAIL_MIN_PROFIT_TOOLTIP                       :{BLACK}سب سے کم آمدنی والی گاڑی کا نفع (صرف دو سال سے پرانی گاڑیاں مدنظر رکھی جائیں گی)
 STR_PERFORMANCE_DETAIL_DELIVERED_TOOLTIP                        :{BLACK}پچھلے چار ربعات میں پہنچاے گے سامان کی تعداد
 STR_PERFORMANCE_DETAIL_CARGO_TOOLTIP                            :{BLACK}پچھلے ربع میں پہنچاے گے تمام قسم کے سامان کی تعداد
 STR_PERFORMANCE_DETAIL_MONEY_TOOLTIP                            :{BLACK}کمپنی کے بینک میں پڑے ہوے پیسے
@@ -661,8 +627,6 @@ STR_PLAYLIST_TOOLTIP_CLICK_TO_ADD_TRACK                         :{BLACK}موجو
 STR_PLAYLIST_TOOLTIP_CLICK_TO_REMOVE_TRACK                      :{BLACK}موجودہ پروگرام میں سے نکالنے کے لئے گانے پر کلک کریں (صرف اپنی مرضی کے مطابق 1 یا 2)
 
 # Highscore window
-STR_HIGHSCORE_TOP_COMPANIES_WHO_REACHED                         :{BIG_FONT}{BLACK}سر فہرست کمپنیاں جو {NUM}
-STR_HIGHSCORE_TOP_COMPANIES_NETWORK_GAME                        :{BIG_FONT}{BLACK}کمپنیوں کی فہرست میں {NUM}
 STR_HIGHSCORE_POSITION                                          :{BIG_FONT}{BLACK}{COMMA}.
 STR_HIGHSCORE_PERFORMANCE_TITLE_BUSINESSMAN                     :کاروباری
 STR_HIGHSCORE_PERFORMANCE_TITLE_ENTREPRENEUR                    :سرمایہ دار
@@ -826,7 +790,6 @@ STR_NEWS_VEHICLE_IS_GETTING_VERY_OLD                            :{WHITE}{VEHICLE
 STR_NEWS_VEHICLE_IS_GETTING_VERY_OLD_AND                        :{WHITE}{VEHICLE} بہت پرانا ہو رہا ہے اور اُسے فوراً بدلنا ضروری ہے
 STR_NEWS_TRAIN_IS_STUCK                                         :{WHITE}{VEHICLE} کو آگے بڑھنے کے لئے راستہ نہیں مل رہا
 STR_NEWS_VEHICLE_IS_LOST                                        :{WHITE}{VEHICLE} گم گی ہے
-STR_NEWS_VEHICLE_IS_UNPROFITABLE                                :{WHITE}{VEHICLE} نے پچھلے سال میں {CURRENCY_LONG} نفع حاصل کیا
 STR_NEWS_AIRCRAFT_DEST_TOO_FAR                                  :{WHITE}{VEHICLE} اگلی منزل پر پہنچ سے باہر ہونے کی وجہ سے نہیں جا سکتا
 
 STR_NEWS_ORDER_REFIT_FAILED                                     :{WHITE}{VEHICLE} رُک گیا ہے کیونکے اُسے دیا گیا تزین و آرائش کا حکم پورا نہں ہو سکا
@@ -842,7 +805,6 @@ STR_NEWS_OFFER_OF_SUBSIDY_EXPIRED                               :{BIG_FONT}{BLAC
 STR_NEWS_SUBSIDY_WITHDRAWN_SERVICE                              :{BIG_FONT}{BLACK}امداد ختم:{}{}{STRING} {STRING} سے {STRING} تک کئی گئی خدمت کی اب کوئی امداد نہیں ملے گی
 ###length 4
 
-STR_NEWS_ROAD_REBUILDING                                        :{BIG_FONT}{BLACK}{TOWN} میں ٹریفک کا بُرا حال!{}{}سڑکیں دوبارہ بنوانے کے پیسے {STRING} نے دئیے۔ اس کی وجہ سے اگلے 6 ماہ مشکل رہے گی
 
 # Extra view window
 STR_EXTRA_VIEWPORT_TITLE                                        :{WHITE}دہکھنے والی کھڑکی {COMMA}
@@ -861,7 +823,7 @@ STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :{BLACK}کرنس
 STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}کرنسی کی اکائی اختیار کریں
 
 
-###length 42
+###length 44
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :برطانوی پاونڈ
 STR_GAME_OPTIONS_CURRENCY_USD                                   :امریکی ڈالر
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :یورو
@@ -921,9 +883,9 @@ STR_GAME_OPTIONS_RESOLUTION_OTHER                               :دیگر
 
 
 
+
 STR_GAME_OPTIONS_BASE_GRF                                       :{BLACK}بُنیادی گرافک سیٹ
 STR_GAME_OPTIONS_BASE_GRF_TOOLTIP                               :{BLACK}بُنیادی گرافک سیٹ اختیار کریں
-STR_GAME_OPTIONS_BASE_GRF_STATUS                                :{RED}{NUM} missing/corrupted file{P "" s}
 STR_GAME_OPTIONS_BASE_GRF_DESCRIPTION_TOOLTIP                   :{BLACK}بُنیادی گرافک سیٹ کے بارے میں اضافی معلومات
 
 STR_GAME_OPTIONS_BASE_SFX                                       :{BLACK}بُنیادی صوتی سیٹ
@@ -932,8 +894,11 @@ STR_GAME_OPTIONS_BASE_SFX_DESCRIPTION_TOOLTIP                   :{BLACK}بُنی
 
 STR_GAME_OPTIONS_BASE_MUSIC                                     :{BLACK}بُنیادی موسیقی سیٹ
 STR_GAME_OPTIONS_BASE_MUSIC_TOOLTIP                             :{BLACK}بُنیادی موسیقی سیٹ اختیار کریں
-STR_GAME_OPTIONS_BASE_MUSIC_STATUS                              :{RED}{NUM} corrupted file{P "" s}
 STR_GAME_OPTIONS_BASE_MUSIC_DESCRIPTION_TOOLTIP                 :{BLACK}بُنیادی موسیقی سیٹ کے بارے میں اضافی معلومات
+
+
+
+
 
 STR_ERROR_FULLSCREEN_FAILED                                     :{WHITE}مُکمل اسکرین موڈ ناکام ہوگیا
 
@@ -945,8 +910,6 @@ STR_CURRENCY_DECREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}ایک �
 STR_CURRENCY_INCREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}ایک پاونڈ (£) کے لئے اپنی کرنسی کی تعداد میں اضافہ کریں
 STR_CURRENCY_SET_EXCHANGE_RATE_TOOLTIP                          :{BLACK}ایک پاونڈ (£) کے لئے اپنی کرنسی کا exchange rate اختیار کریں
 
-STR_CURRENCY_SEPARATOR                                          :{LTBLUE}Separator: {ORANGE}{STRING}
-STR_CURRENCY_SET_CUSTOM_CURRENCY_SEPARATOR_TOOLTIP              :{BLACK}اپنی کرنسی کا separator رکھیں
 
 STR_CURRENCY_PREFIX                                             :{LTBLUE}سابقہ: {ORANGE}{STRING}
 STR_CURRENCY_SET_CUSTOM_CURRENCY_PREFIX_TOOLTIP                 :{BLACK}اپنی کرنسی کا سابقہ رکھیں
@@ -1059,6 +1022,7 @@ STR_CONFIG_SETTING_HORIZONTAL_POS_CENTER                        :درمیان
 STR_CONFIG_SETTING_HORIZONTAL_POS_RIGHT                         :دائیں
 
 
+
 ###setting-zero-is-special
 
 
@@ -1066,6 +1030,7 @@ STR_CONFIG_SETTING_HORIZONTAL_POS_RIGHT                         :دائیں
 
 
 
+###length 2
 
 ###setting-zero-is-special
 
@@ -1122,7 +1087,10 @@ STR_CONFIG_SETTING_MULTIPINDTOWN                                :ایک شہر �
 STR_CONFIG_SETTING_SIGNALSIDE                                   :ریل کے اشارے دکھائو: {STRING}
 ###length 3
 
+###length 2
 STR_CONFIG_SETTING_SHOWFINANCES                                 :ہر سال کے آخر پر کھاتے والی ونڈو دکھاو: {STRING}
+
+###length 2
 
 STR_CONFIG_SETTING_NONSTOP_BY_DEFAULT                           :نئے احکامات شروع سے 'نان اسٹاپ' ہوں: {STRING}
 
@@ -1136,8 +1104,10 @@ STR_CONFIG_SETTING_AUTOSCROLL                                   :ونڈو کو �
 ###length 4
 
 STR_CONFIG_SETTING_BRIBE                                        :مقامی اتھارٹی کی رشوت کی اجازت دیں: {STRING}
+###length 2
 
 STR_CONFIG_SETTING_ALLOW_EXCLUSIVE                              :خصوصی نقل و حمل کے حقوق کو خریدنے کی اجازت: {STRING}
+###length 2
 
 STR_CONFIG_SETTING_ALLOW_FUND_BUILDINGS                         :فنڈنگ عمارتوں کی اجازت: {STRING}
 
@@ -1174,8 +1144,15 @@ STR_CONFIG_SETTING_ORDER_REVIEW_EXDEPOT                         :ہاں، لیک
 STR_CONFIG_SETTING_ORDER_REVIEW_ON                              :تمام گاڑیوں کے
 
 STR_CONFIG_SETTING_WARN_INCOME_LESS                             :گاڑی کو نقصان کی صورت میں انتباہ کیجئیے: {STRING}
+###length 2
 
 STR_CONFIG_SETTING_NEVER_EXPIRE_VEHICLES                        :گاڑیوں کی معیاد کبھی ختم نہ ہو: {STRING}
+
+###length 2
+
+
+###setting-zero-is-special
+
 
 STR_CONFIG_SETTING_AUTORENEW_VEHICLE                            :گاڑی پرانی ہونے کی صورت میں خودکار طریقے سے بدل دیں: {STRING}
 
@@ -1299,7 +1276,7 @@ STR_CONFIG_SETTING_ADVANCED_VEHICLE_LISTS                       :گاڑیوں ک
 
 STR_CONFIG_SETTING_LOADING_INDICATORS                           :سامان بھرنے کی نشانی دکھائیں: {STRING}
 
-STR_CONFIG_SETTING_TIMETABLE_IN_TICKS                           :اوقات کا جدول دنوں کی بجائے ٹِکس میں دکھائیں: {STRING}
+###length 3
 
 STR_CONFIG_SETTING_TIMETABLE_SHOW_ARRIVAL_DEPARTURE             :قوقات کے جدول میں آمد اور روانگی دکھائیں: {STRING}
 
@@ -1320,6 +1297,9 @@ STR_CONFIG_SETTING_PERSISTENT_BUILDINGTOOLS                     :تعمیرات�
 
 
 
+###length 2
+
+###length 2
 
 
 
@@ -1343,8 +1323,6 @@ STR_CONFIG_SETTING_AI_BUILDS_AIRCRAFT                           :کمپیوٹر 
 
 STR_CONFIG_SETTING_AI_BUILDS_SHIPS                              :کمپیوٹر کے لئے بحری جہاز غیر فعال کریں: {STRING}
 
-###length 3
-
 STR_CONFIG_SETTING_AI_IN_MULTIPLAYER                            :زیادہ کھلاڑیوں والے کھیل میں AI کی اجازت دیں: {STRING}
 
 STR_CONFIG_SETTING_SCRIPT_MAX_OPCODES                           :اسکرپٹس کے معطل ہونے سے پہلے #opcodes: {STRING}
@@ -1354,6 +1332,7 @@ STR_CONFIG_SETTING_SERVINT_ISPERCENT                            :مرمتی وق
 ###setting-zero-is-special
 
 STR_CONFIG_SETTING_NOSERVICE                                    :گاڑیوں کی خرابی غیر فعال ہونے کی صورت میں مرمت بھی غیر فعال کر دیں: {STRING}
+
 
 STR_CONFIG_SETTING_WAGONSPEEDLIMITS                             :مال گاڑی کی حد رفتار فعال کریں: {STRING}
 
@@ -1407,7 +1386,6 @@ STR_CONFIG_SETTING_SEMAPHORE_BUILD_BEFORE_DATE                  :پہلے خود
 
 STR_CONFIG_SETTING_CYCLE_SIGNAL_TYPES                           :اشعاروں کی اقسام میں سے گزریں: {STRING}
 ###length 2
-STR_CONFIG_SETTING_CYCLE_SIGNAL_PBS                             :صرف راستے کے اشارے
 STR_CONFIG_SETTING_CYCLE_SIGNAL_ALL                             :تمام
 
 ###length 2
@@ -1470,7 +1448,6 @@ STR_CONFIG_SETTING_CITY_SIZE_MULTIPLIER                         :شہر کا ش�
 
 
 
-###length 5
 
 ###length 3
 
@@ -1566,7 +1543,6 @@ STR_ABANDON_SCENARIO_QUERY                                      :{YELLOW}کیا 
 
 # Cheat window
 STR_CHEATS                                                      :{WHITE}دھوکے
-STR_CHEATS_TOOLTIP                                              :{BLACK}چیک باکسز سے ظاہر ہوتا ہے کہ آپ نے یہ دھوکا پہلے بھی کیا یے
 STR_CHEAT_MONEY                                                 :{LTBLUE}رقم کو {CURRENCY_LONG} سے بڑھائیں
 STR_CHEAT_CHANGE_COMPANY                                        :{LTBLUE}اس کمپنی کی طور پر کھیلیں: {ORANGE}{COMMA}
 STR_CHEAT_EXTRA_DYNAMITE                                        :{LTBLUE}جادوئی دھماکہ خیز (نہ ٹوٹنے والی چیزیں بھی توڑ دے): {ORANGE}{STRING}
@@ -1686,8 +1662,6 @@ STR_NETWORK_SERVER_LIST_MAP_SIZE_CAPTION                        :{BLACK}نقشے
 STR_NETWORK_SERVER_LIST_MAP_SIZE_CAPTION_TOOLTIP                :{BLACK}کھیل لے نقشے کا سائز منتخب کریں{}علاقے کے حساب سے ترتیب دینے کے لئے کلک کریں
 STR_NETWORK_SERVER_LIST_DATE_CAPTION                            :{BLACK}تاریخ
 STR_NETWORK_SERVER_LIST_DATE_CAPTION_TOOLTIP                    :{BLACK}آج کی تاریخ
-STR_NETWORK_SERVER_LIST_YEARS_CAPTION                           :{BLACK}سال
-STR_NETWORK_SERVER_LIST_YEARS_CAPTION_TOOLTIP                   :{BLACK}کھیل کو چلتے ہوئے سال
 STR_NETWORK_SERVER_LIST_INFO_ICONS_TOOLTIP                      :{BLACK}Language, server version, etc.
 
 STR_NETWORK_SERVER_LIST_CLICK_GAME_TO_SELECT                    :{BLACK}فہرست میں سے ایک کھیل کو چُننے کے لئے ایک پر کلک کریں
@@ -2355,8 +2329,8 @@ STR_TOWN_VIEW_DELETE_TOOLTIP                                    :{BLACK}اس ش�
 STR_LOCAL_AUTHORITY_COMPANY_RATING                              :{YELLOW}{COMPANY} {COMPANY_NUM}: {ORANGE}{STRING}
 
 ###length 8
+###next-name-looks-similar
 
-###length 8
 
 # Goal window
 STR_GOALS_TEXT                                                  :{ORANGE}{STRING}
@@ -2378,8 +2352,6 @@ STR_GOAL_QUESTION_CAPTION_ERROR                                 :خرابی
 STR_STATION_LIST_STATION                                        :{YELLOW}{STATION} {STATION_FEATURES}
 STR_STATION_LIST_WAYPOINT                                       :{YELLOW}{WAYPOINT}
 STR_STATION_LIST_SELECT_ALL_FACILITIES                          :{BLACK}تمام سہولتوں کا انتخاب کرو
-STR_STATION_LIST_SELECT_ALL_TYPES                               :{BLACK}تمام قسم کے سامان کا انتخاب کرو (بشمول غیر منتظر سامان کے)
-STR_STATION_LIST_NO_WAITING_CARGO                               :{BLACK}کسی قسم کا کویی سامان انتظار نہیں کر رہا ہے
 
 # Station view window
 STR_STATION_VIEW_CAPTION                                        :{WHITE}{STATION} {STATION_FEATURES}
@@ -2433,7 +2405,6 @@ STR_COMPANY_INFRASTRUCTURE_VIEW_CANALS                          :{WHITE}نہری
 STR_COMPANY_INFRASTRUCTURE_VIEW_STATION_SECT                    :{GOLD} اسٹیشن:
 STR_COMPANY_INFRASTRUCTURE_VIEW_STATIONS                        :{WHITE}اسٹیشن کی ٹائل
 STR_COMPANY_INFRASTRUCTURE_VIEW_AIRPORTS                        :{WHITE}ہوائی اڈے
-STR_COMPANY_INFRASTRUCTURE_VIEW_TOTAL                           :{WHITE}{CURRENCY_LONG}سالانہ
 
 # Industry directory
 
@@ -2643,7 +2614,6 @@ STR_VEHICLE_DETAIL_TAB_CARGO                                    :{BLACK}ساما
 # Order view
 
 STR_ORDER_INDEX                                                 :{COMMA}:{NBSP}
-STR_ORDER_TEXT                                                  :{STRING} {STRING} {STRING}
 
 
 # Order bottom buttons
@@ -2651,6 +2621,10 @@ STR_ORDER_TEXT                                                  :{STRING} {STRIN
 
 
 
+
+# Depot action tooltips, one per vehicle type
+###length VEHICLE_TYPES
+###next-name-looks-similar
 
 
 # Conditional order variables, must follow order of OrderConditionVariable enum
@@ -2673,6 +2647,7 @@ STR_ORDER_GO_TO_NEAREST_DEPOT_FORMAT                            :{STRING} {STRIN
 STR_ORDER_GO_TO_DEPOT_FORMAT                                    :{STRING} {DEPOT}
 
 
+
 STR_ORDER_GO_TO_STATION                                         :{STRING} {STATION} {STRING}
 
 
@@ -2690,6 +2665,7 @@ STR_ORDER_OUT_OF_RANGE                                          :{RED} (اگلا
 
 STR_TIMETABLE_TRAVEL_NOT_TIMETABLED_SPEED                       :زیادہ سے زیادہ {2:VELOCITY} رفتار پر سفر کریں (بغیر اوقات کے)
 STR_TIMETABLE_TRAVEL_FOR_SPEED                                  :{STRING} کے لئے زیادہ سے زیادہ {VELOCITY} رفتار پر سفر کریں
+
 
 
 
@@ -2809,6 +2785,8 @@ STR_ERROR_CAN_T_RENAME_DEPOT                                    :{WHITE} ڈیپ�
 
 
 
+
+# Depot unbunching related errors
 
 # Autoreplace related errors
 
@@ -3161,6 +3139,7 @@ STR_STATION_NAME                                                :{STATION}
 STR_TOWN_NAME                                                   :{TOWN}
 STR_VEHICLE_NAME                                                :{VEHICLE}
 STR_WAYPOINT_NAME                                               :{WAYPOINT}
+
 
 STR_JUST_CARGO                                                  :{CARGO_LONG}
 STR_JUST_CHECKMARK                                              :{CHECKMARK}

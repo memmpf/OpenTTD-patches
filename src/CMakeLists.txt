@@ -242,6 +242,7 @@ add_files(
     league_gui.h
     league_gui.cpp
     league_type.h
+    library_loader.h
     livery.h
     load_check.h
     main_gui.cpp
@@ -345,6 +346,8 @@ add_files(
     order_gui.cpp
     order_type.h
     osk_gui.cpp
+    palette.cpp
+    palette_func.h
     pbs.cpp
     pbs.h
     plans.cpp
@@ -409,6 +412,8 @@ add_files(
     signal.cpp
     signal_func.h
     signal_type.h
+    signature.cpp
+    signature.h
     signs.cpp
     signs_base.h
     signs_cmd.cpp
@@ -420,6 +425,8 @@ add_files(
     smallmap_colours.h
     smallmap_gui.cpp
     smallmap_gui.h
+    social_integration.cpp
+    social_integration.h
     sortlist_type.h
     sound.cpp
     sound_func.h
@@ -461,6 +468,8 @@ add_files(
     subsidy_func.h
     subsidy_gui.cpp
     subsidy_type.h
+    survey.cpp
+    survey.h
     tar_type.h
     tbtr_template_gui_main.cpp
     tbtr_template_gui_create.cpp
@@ -541,6 +550,7 @@ add_files(
     vehicle_type.h
     vehiclelist.cpp
     vehiclelist.h
+    vehiclelist_func.h
     viewport.cpp
     viewport_func.h
     viewport_gui.cpp

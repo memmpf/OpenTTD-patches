@@ -31,29 +31,29 @@ static const SaveLoad _roadstop_desc[] = {
 	SLE_REF(RoadStop, next,         REF_ROADSTOPS),
 };
 
-static uint16 _waiting_acceptance;
-static uint32 _old_num_flows;
-static uint16 _cargo_source;
-static uint32 _cargo_source_xy;
-static uint8  _cargo_periods;
+static uint16_t _waiting_acceptance;
+static uint32_t _old_num_flows;
+static uint16_t _cargo_source;
+static uint32_t _cargo_source_xy;
+static uint8_t  _cargo_periods;
 static Money  _cargo_feeder_share;
 
 CargoPacketList _packets;
-uint32 _old_num_dests;
+uint32_t _old_num_dests;
 uint _cargo_reserved_count;
 
 struct FlowSaveLoad {
 	FlowSaveLoad() : source(0), via(0), share(0), restricted(false) {}
 	StationID source;
 	StationID via;
-	uint32 share;
+	uint32_t share;
 	bool restricted;
 };
 
 typedef std::pair<const StationID, CargoPacketList > StationCargoPair;
 
 static OldPersistentStorage _old_st_persistent_storage;
-static byte _old_last_vehicle_type;
+static uint8_t _old_last_vehicle_type;
 
 /**
  * Swap the temporary packets with the packets without specific destination in
@@ -77,61 +77,41 @@ static void SwapPackets(GoodsEntry *ge)
 	}
 }
 
-class SlStationSpecList : public DefaultSaveLoadHandler<SlStationSpecList, BaseStation> {
+template <typename T>
+class SlStationSpecList : public DefaultSaveLoadHandler<SlStationSpecList<T>, BaseStation> {
 public:
 	inline static const SaveLoad description[] = {
-		SLE_CONDVAR(StationSpecList, grfid,    SLE_UINT32,                SLV_27,                    SL_MAX_VERSION),
-		SLE_CONDVAR(StationSpecList, localidx, SLE_FILE_U8 | SLE_VAR_U16, SLV_27,                    SLV_EXTEND_ENTITY_MAPPING),
-		SLE_CONDVAR(StationSpecList, localidx, SLE_UINT16,                SLV_EXTEND_ENTITY_MAPPING, SL_MAX_VERSION),
+		SLE_CONDVAR(SpecMapping<T>, grfid,    SLE_UINT32,                SLV_27,                    SL_MAX_VERSION),
+		SLE_CONDVAR(SpecMapping<T>, localidx, SLE_FILE_U8 | SLE_VAR_U16, SLV_27,                    SLV_EXTEND_ENTITY_MAPPING),
+		SLE_CONDVAR(SpecMapping<T>, localidx, SLE_UINT16,                SLV_EXTEND_ENTITY_MAPPING, SL_MAX_VERSION),
 	};
 	inline const static SaveLoadCompatTable compat_description = _station_spec_list_sl_compat;
 
 	void Save(BaseStation *bst) const override
 	{
-		SlSetStructListLength(bst->speclist.size());
-		for (uint i = 0; i < bst->speclist.size(); i++) {
-			SlObject(&bst->speclist[i], this->GetDescription());
+		auto &speclist = GetStationSpecList<T>(bst);
+		SlSetStructListLength(speclist.size());
+		for (auto &sm : speclist) {
+			SlObject(&sm, this->GetDescription());
 		}
 	}
 
 	void Load(BaseStation *bst) const override
 	{
-		uint8 num_specs = (uint8)SlGetStructListLength(UINT8_MAX);
+		uint8_t num_specs = (uint8_t)SlGetStructListLength(UINT8_MAX);
 
-		bst->speclist.resize(num_specs);
-		for (uint i = 0; i < num_specs; i++) {
-			SlObject(&bst->speclist[i], this->GetLoadDescription());
+		auto &speclist = GetStationSpecList<T>(bst);
+		speclist.reserve(num_specs);
+		for (size_t index = 0; index < num_specs; ++index) {
+			auto &sm = speclist.emplace_back();
+			SlObject(&sm, this->GetLoadDescription());
 		}
 	}
 };
 
-class SlRoadStopSpecList : public DefaultSaveLoadHandler<SlRoadStopSpecList, BaseStation> {
-public:
-	inline static const SaveLoad description[] = {
-		SLE_CONDVAR(StationSpecList, grfid,    SLE_UINT32,                SLV_27,                    SL_MAX_VERSION),
-		SLE_CONDVAR(StationSpecList, localidx, SLE_FILE_U8 | SLE_VAR_U16, SLV_27,                    SLV_EXTEND_ENTITY_MAPPING),
-		SLE_CONDVAR(StationSpecList, localidx, SLE_UINT16,                SLV_EXTEND_ENTITY_MAPPING, SL_MAX_VERSION),
-	};
-	inline const static SaveLoadCompatTable compat_description = _station_road_stop_spec_list_sl_compat;
-
-	void Save(BaseStation *bst) const override
-	{
-		SlSetStructListLength(bst->roadstop_speclist.size());
-		for (uint i = 0; i < bst->roadstop_speclist.size(); i++) {
-			SlObject(&bst->roadstop_speclist[i], this->GetDescription());
-		}
-	}
-
-	void Load(BaseStation *bst) const override
-	{
-		uint8 num_specs = (uint8)SlGetStructListLength(UINT8_MAX);
-
-		bst->roadstop_speclist.resize(num_specs);
-		for (uint i = 0; i < num_specs; i++) {
-			SlObject(&bst->roadstop_speclist[i], this->GetLoadDescription());
-		}
-	}
-};
+/* Instantiate SlStationSpecList classes. */
+template class SlStationSpecList<StationSpec>;
+template class SlStationSpecList<RoadStopSpec>;
 
 class SlStationCargo : public DefaultSaveLoadHandler<SlStationCargo, GoodsEntry> {
 public:
@@ -191,7 +171,7 @@ public:
 		FlowSaveLoad flow;
 		FlowStat *fs = nullptr;
 		StationID prev_source = INVALID_STATION;
-		for (uint32 j = 0; j < num_flows; ++j) {
+		for (uint32_t j = 0; j < num_flows; ++j) {
 			SlObject(&flow, this->GetLoadDescription());
 			if (fs == nullptr || prev_source != flow.source) {
 				fs = &(*(ge->data->flows.insert(ge->data->flows.end(), FlowStat(flow.source, flow.via, flow.share, flow.restricted))));
@@ -344,8 +324,6 @@ public:
 	};
 	inline const static SaveLoadCompatTable compat_description = {};
 
-	static uint8 last_num_specs; ///< Number of specs of the last loaded station.
-
 	void Save(BaseStation *bst) const override
 	{
 		SlSetStructListLength(bst->custom_roadstop_tile_data.size());
@@ -356,7 +334,7 @@ public:
 
 	void Load(BaseStation *bst) const override
 	{
-		uint32 num_tiles = (uint32)SlGetStructListLength(UINT32_MAX);
+		uint32_t num_tiles = (uint32_t)SlGetStructListLength(UINT32_MAX);
 		bst->custom_roadstop_tile_data.resize(num_tiles);
 		for (uint i = 0; i < num_tiles; i++) {
 			SlObject(&bst->custom_roadstop_tile_data[i], this->GetLoadDescription());
@@ -503,8 +481,8 @@ static const SaveLoad _station_desc[] = {
 	SLE_SAVEBYTE(BaseStation, facilities),
 	SLEG_STRUCT("normal", SlStationNormal),
 	SLEG_STRUCT("waypoint", SlStationWaypoint),
-	SLEG_CONDSTRUCTLIST("speclist", SlStationSpecList, SLV_27, SL_MAX_VERSION),
-	SLEG_CONDSTRUCTLIST("roadstopspeclist", SlRoadStopSpecList, SLV_NEWGRF_ROAD_STOPS, SL_MAX_VERSION),
+	SLEG_CONDSTRUCTLIST("speclist", SlStationSpecList<StationSpec>, SLV_27, SL_MAX_VERSION),
+	SLEG_CONDSTRUCTLIST("roadstopspeclist", SlStationSpecList<RoadStopSpec>, SLV_NEWGRF_ROAD_STOPS, SL_MAX_VERSION),
 };
 
 struct STNNChunkHandler : ChunkHandler {

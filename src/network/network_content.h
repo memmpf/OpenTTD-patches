@@ -83,8 +83,8 @@ protected:
 
 	friend class NetworkContentConnecter;
 
-	bool Receive_SERVER_INFO(Packet *p) override;
-	bool Receive_SERVER_CONTENT(Packet *p) override;
+	bool Receive_SERVER_INFO(Packet &p) override;
+	bool Receive_SERVER_CONTENT(Packet &p) override;
 
 	ContentInfo *GetContent(ContentID cid);
 	const ContentInfo *GetContent(ContentID cid) const { return const_cast<ClientNetworkContentSocketHandler *>(this)->GetContent(cid); }
@@ -97,7 +97,7 @@ protected:
 	void OnDownloadComplete(ContentID cid) override;
 
 	void OnFailure() override;
-	void OnReceiveData(const char *data, size_t length) override;
+	void OnReceiveData(UniqueBuffer<char> data) override;
 	bool IsCancelled() const override;
 
 	bool BeforeDownload();
@@ -115,6 +115,7 @@ public:
 	void Connect();
 	void SendReceive();
 	NetworkRecvStatus CloseConnection(bool error = true) override;
+	void Cancel();
 
 	void RequestContentList(ContentType type);
 	void RequestContentList(uint count, const ContentID *content_ids);
@@ -138,7 +139,7 @@ public:
 	/** Get the begin of the content inf iterator. */
 	ConstContentIterator Begin() const { return this->infos.data(); }
 	/** Get the nth position of the content inf iterator. */
-	ConstContentIterator Get(uint32 index) const { return this->infos.data() + index; }
+	ConstContentIterator Get(uint32_t index) const { return this->infos.data() + index; }
 	/** Get the end of the content inf iterator. */
 	ConstContentIterator End() const { return this->Begin() + this->Length(); }
 

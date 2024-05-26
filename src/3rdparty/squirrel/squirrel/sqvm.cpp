@@ -17,6 +17,8 @@
 #include "sqarray.h"
 #include "sqclass.h"
 
+#include "../../../core/bit_cast.hpp"
+
 #include "../../../string_func.h"
 
 #include "../../../safeguards.h"
@@ -50,7 +52,7 @@ bool SQVM::BW_OP(SQUnsignedInteger op,SQObjectPtr &trg,const SQObjectPtr &o1,con
 			case BW_XOR:	res = i1 ^ i2; break;
 			case BW_SHIFTL:	res = i1 << i2; break;
 			case BW_SHIFTR:	res = i1 >> i2; break;
-			case BW_USHIFTR:res = (SQInteger)(*((SQUnsignedInteger*)&i1) >> i2); break;
+			case BW_USHIFTR:res = (SQInteger)(std::bit_cast<SQUnsignedInteger>(i1) >> i2); break;
 			default: { Raise_Error("internal vm error bitwise op failed"); return false; }
 		}
 	}
@@ -115,6 +117,8 @@ SQVM::SQVM(SQSharedState *ss)
 	_can_suspend = false;
 	_in_stackoverflow = false;
 	_ops_till_suspend = 0;
+	_ops_till_suspend_error_threshold = INT64_MIN;
+	_ops_till_suspend_error_label = nullptr;
 	_callsstack = nullptr;
 	_callsstacksize = 0;
 	_alloccallsstacksize = 0;
@@ -214,7 +218,7 @@ bool SQVM::ObjCmp(const SQObjectPtr &o1,const SQObjectPtr &o2,SQInteger &result)
 					_RET_SUCCEED(_integer(res))
 				}
 			}
-			FALLTHROUGH;
+			[[fallthrough]];
 		default:
 			_RET_SUCCEED( _userpointer(o1) < _userpointer(o2)?-1:1 );
 		}
@@ -286,7 +290,7 @@ void SQVM::ToString(const SQObjectPtr &o,SQObjectPtr &res)
 				//else keeps going to the default
 			}
 		}
-		FALLTHROUGH;
+		[[fallthrough]];
 	default:
 		seprintf(buf, lastof(buf),"(%s : 0x%p)",GetTypeName(o),(void*)_rawval(o));
 	}
@@ -469,10 +473,10 @@ bool SQVM::DerefInc(SQInteger op,SQObjectPtr &target, SQObjectPtr &self, SQObjec
 
 #define arg0 (_i_._arg0)
 #define arg1 (_i_._arg1)
-#define sarg1 (*(const_cast<SQInt32 *>(&_i_._arg1)))
+#define sarg1 (std::bit_cast<SQInt32>(_i_._arg1))
 #define arg2 (_i_._arg2)
 #define arg3 (_i_._arg3)
-#define sarg3 ((SQInteger)*((const signed char *)&_i_._arg3))
+#define sarg3 ((SQInteger)std::bit_cast<char>(_i_._arg3))
 
 SQRESULT SQVM::Suspend()
 {
@@ -538,7 +542,7 @@ bool SQVM::FOREACH_OP(SQObjectPtr &o1,SQObjectPtr &o2,SQObjectPtr
 			_generator(o1)->Resume(this, arg_2+1);
 			_FINISH(0);
 		}
-		FALLTHROUGH;
+		[[fallthrough]];
 	default:
 		Raise_Error("cannot iterate %s", GetTypeName(o1));
 	}
@@ -743,6 +747,10 @@ exception_restore:
 		{
 			DecreaseOps(1);
 			if (ShouldSuspend()) { _suspended = SQTrue; _suspended_traps = traps; return true; }
+			if (IsOpsTillSuspendError()) {
+				Raise_Error("excessive CPU usage in %s", _ops_till_suspend_error_label);
+				SQ_THROW();
+			}
 
 			const SQInstruction &_i_ = *ci->_ip++;
 #ifdef _DEBUG_DUMP
@@ -757,7 +765,7 @@ exception_restore:
 				continue;
 			case _OP_LOAD: TARGET = ci->_literals[arg1]; continue;
 			case _OP_LOADINT: TARGET = (SQInteger)arg1; continue;
-			case _OP_LOADFLOAT: TARGET = *((const SQFloat *)&arg1); continue;
+			case _OP_LOADFLOAT: TARGET = std::bit_cast<SQFloat>(arg1); continue;
 			case _OP_DLOAD: TARGET = ci->_literals[arg1]; STK(arg2) = ci->_literals[arg3];continue;
 			case _OP_TAILCALL:
 				temp_reg = STK(arg1);
@@ -769,7 +777,7 @@ exception_restore:
 					ct_stackbase = _stackbase;
 					goto common_call;
 				}
-				FALLTHROUGH;
+				[[fallthrough]];
 			case _OP_CALL: {
 					ct_tailcall = false;
 					ct_target = arg0;
@@ -1331,7 +1339,7 @@ bool SQVM::Set(const SQObjectPtr &self,const SQObjectPtr &key,const SQObjectPtr 
 				return true;
 			}
 		}
-		FALLTHROUGH;
+		[[fallthrough]];
 	case OT_USERDATA:
 		if(_delegable(self)->_delegate) {
 			SQObjectPtr t;

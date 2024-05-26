@@ -36,7 +36,7 @@ void DrawRoadVehDetails(const Vehicle *v, const Rect &r)
 	SetDParam(1, v->build_year);
 	SetDParam(2, v->value);
 	DrawString(r.left, r.right, y, STR_VEHICLE_INFO_BUILT_VALUE);
-	y += FONT_HEIGHT_NORMAL;
+	y += GetCharacterHeight(FS_NORMAL);
 
 	if (v->HasArticulatedPart()) {
 		CargoArray max_cargo{};
@@ -71,7 +71,7 @@ void DrawRoadVehDetails(const Vehicle *v, const Rect &r)
 		}
 
 		DrawString(r.left, r.right, y, capacity, TC_BLUE);
-		y += FONT_HEIGHT_NORMAL + WidgetDimensions::scaled.vsep_normal;
+		y += GetCharacterHeight(FS_NORMAL) + WidgetDimensions::scaled.vsep_normal;
 
 		for (const Vehicle *u = v; u != nullptr; u = u->Next()) {
 			if (u->cargo_cap == 0) continue;
@@ -85,7 +85,7 @@ void DrawRoadVehDetails(const Vehicle *v, const Rect &r)
 				feeder_share += u->cargo.GetFeederShare();
 			}
 			DrawString(r.left, r.right, y, str);
-			y += FONT_HEIGHT_NORMAL;
+			y += GetCharacterHeight(FS_NORMAL);
 		}
 		y += WidgetDimensions::scaled.vsep_normal;
 	} else {
@@ -93,7 +93,7 @@ void DrawRoadVehDetails(const Vehicle *v, const Rect &r)
 		SetDParam(1, v->cargo_cap);
 		SetDParam(4, GetCargoSubtypeText(v));
 		DrawString(r.left, r.right, y, STR_VEHICLE_INFO_CAPACITY);
-		y += FONT_HEIGHT_NORMAL + WidgetDimensions::scaled.vsep_normal;
+		y += GetCharacterHeight(FS_NORMAL) + WidgetDimensions::scaled.vsep_normal;
 
 		str = STR_VEHICLE_DETAILS_CARGO_EMPTY;
 		if (v->cargo.StoredCount() > 0) {
@@ -104,13 +104,13 @@ void DrawRoadVehDetails(const Vehicle *v, const Rect &r)
 			feeder_share += v->cargo.GetFeederShare();
 		}
 		DrawString(r.left, r.right, y, str);
-		y += FONT_HEIGHT_NORMAL + WidgetDimensions::scaled.vsep_normal;
+		y += GetCharacterHeight(FS_NORMAL) + WidgetDimensions::scaled.vsep_normal;
 	}
 
 	/* Draw Transfer credits text */
 	SetDParam(0, feeder_share);
 	DrawString(r.left, r.right, y, STR_VEHICLE_INFO_FEEDER_CARGO_VALUE);
-	y += FONT_HEIGHT_NORMAL + WidgetDimensions::scaled.vsep_normal;
+	y += GetCharacterHeight(FS_NORMAL) + WidgetDimensions::scaled.vsep_normal;
 
 	if (RoadVehicle::From(v)->critical_breakdown_count > 0) {
 		SetDParam(0, RoadVehicle::From(v)->GetDisplayEffectiveMaxSpeed());
@@ -134,7 +134,7 @@ void DrawRoadVehImage(const Vehicle *v, const Rect &r, VehicleID selection, Engi
 	DrawPixelInfo tmp_dpi;
 	int max_width = r.Width();
 
-	if (!FillDrawPixelInfo(&tmp_dpi, r.left, r.top, r.Width(), r.Height())) return;
+	if (!FillDrawPixelInfo(&tmp_dpi, r)) return;
 
 	AutoRestoreBackup dpi_backup(_cur_dpi, &tmp_dpi);
 

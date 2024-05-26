@@ -18,7 +18,7 @@
 
 struct SignalSpeedKey {
 	TileIndex signal_tile;
-	uint16 signal_track;
+	uint16_t signal_track;
 	Trackdir last_passing_train_dir;
 
 	bool operator==(const SignalSpeedKey& other) const
@@ -35,21 +35,21 @@ struct SignalSpeedKey {
 };
 
 struct SignalSpeedValue {
-	uint16 train_speed;
-	DateTicksScaled time_stamp;
+	uint16_t train_speed;
+	StateTicks time_stamp;
 
 	/** Checks if the timeout has passed */
 	bool IsOutOfDate() const
 	{
-		return _scaled_date_ticks > this->time_stamp;
+		return _state_ticks > this->time_stamp;
 	}
 };
 
 extern btree::btree_map<SignalSpeedKey, SignalSpeedValue> _signal_speeds;
 
 struct Train;
-void SetSignalTrainAdaptationSpeed(const Train *v, TileIndex tile, uint16 track);
-void ApplySignalTrainAdaptationSpeed(Train *v, TileIndex tile, uint16 track);
-uint16 GetLowestSpeedTrainAdaptationSpeedAtSignal(TileIndex tile, uint16 track);
+void SetSignalTrainAdaptationSpeed(const Train *v, TileIndex tile, uint16_t track);
+void ApplySignalTrainAdaptationSpeed(Train *v, TileIndex tile, uint16_t track);
+uint16_t GetLowestSpeedTrainAdaptationSpeedAtSignal(TileIndex tile, uint16_t track);
 
 #endif /* TRAIN_SPEED_ADAPTATION_H */

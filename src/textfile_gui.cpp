@@ -34,12 +34,13 @@
 #include <lzma.h>
 #endif
 
+#include <condition_variable>
 #include <regex>
 
 #include "safeguards.h"
 
 /** Widgets for the textfile window. */
-static const NWidgetPart _nested_textfile_widgets[] = {
+static constexpr NWidgetPart _nested_textfile_widgets[] = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_MAUVE),
 		NWidget(WWT_PUSHARROWBTN, COLOUR_MAUVE, WID_TF_NAVBACK), SetFill(0, 1), SetMinimalSize(15, 1), SetDataTip(AWV_DECREASE, STR_TEXTFILE_NAVBACK_TOOLTIP),
@@ -84,12 +85,18 @@ static WindowDesc _textfile_desc(__FILE__, __LINE__,
 
 TextfileWindow::TextfileWindow(TextfileType file_type) : Window(&_textfile_desc), file_type(file_type)
 {
+	/* Init of nested tree is deferred.
+	 * TextfileWindow::ConstructWindow must be called by the inheriting window. */
+}
+
+void TextfileWindow::ConstructWindow()
+{
 	this->CreateNestedTree();
 	this->vscroll = this->GetScrollbar(WID_TF_VSCROLLBAR);
 	this->hscroll = this->GetScrollbar(WID_TF_HSCROLLBAR);
-	this->FinishInitNested(file_type);
-	this->GetWidget<NWidgetCore>(WID_TF_CAPTION)->SetDataTip(STR_TEXTFILE_README_CAPTION + file_type, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS);
+	this->GetWidget<NWidgetCore>(WID_TF_CAPTION)->SetDataTip(STR_TEXTFILE_README_CAPTION + this->file_type, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS);
 	this->GetWidget<NWidgetStacked>(WID_TF_SEL_JUMPLIST)->SetDisplayedPlane(SZSP_HORIZONTAL);
+	this->FinishInitNested(this->file_type);
 
 	this->DisableWidget(WID_TF_NAVBACK);
 	this->DisableWidget(WID_TF_NAVFORWARD);
@@ -113,7 +120,7 @@ uint TextfileWindow::ReflowContent()
 		int max_width = this->GetWidget<NWidgetCore>(WID_TF_BACKGROUND)->current_x - WidgetDimensions::scaled.frametext.Horizontal();
 		for (auto &line : this->lines) {
 			line.top = height;
-			height += GetStringHeight(line.text, max_width, FS_MONO) / FONT_HEIGHT_MONO;
+			height += GetStringHeight(line.text, max_width, FS_MONO) / GetCharacterHeight(FS_MONO);
 			line.bottom = height;
 		}
 	}
@@ -127,11 +134,11 @@ uint TextfileWindow::GetContentHeight()
 	return this->lines.back().bottom;
 }
 
-/* virtual */ void TextfileWindow::UpdateWidgetSize(int widget, Dimension *size, [[maybe_unused]] const Dimension &padding, [[maybe_unused]] Dimension *fill, [[maybe_unused]] Dimension *resize)
+/* virtual */ void TextfileWindow::UpdateWidgetSize(WidgetID widget, Dimension *size, [[maybe_unused]] const Dimension &padding, [[maybe_unused]] Dimension *fill, [[maybe_unused]] Dimension *resize)
 {
 	switch (widget) {
 		case WID_TF_BACKGROUND:
-			resize->height = FONT_HEIGHT_MONO;
+			resize->height = GetCharacterHeight(FS_MONO);
 
 			size->height = 4 * resize->height + WidgetDimensions::scaled.frametext.Vertical(); // At least 4 lines are visible.
 			size->width = std::max(200u, size->width); // At least 200 pixels wide.
@@ -161,7 +168,7 @@ void TextfileWindow::SetupScrollbars(bool force_reflow)
 static const std::regex _markdown_link_regex{"\\[(.+?)\\]\\((.+?)\\)", std::regex_constants::ECMAScript | std::regex_constants::optimize};
 
 /** Types of link we support in markdown files. */
-enum class LinkType {
+enum class HyperlinkType {
 	Internal, ///< Internal link, or "anchor" in HTML language.
 	Web,      ///< Link to an external website.
 	File,     ///< Link to a local file.
@@ -173,20 +180,20 @@ enum class LinkType {
  *
  * @param destination The hyperlink destination.
  * @param trusted Whether we trust the content of this file.
- * @return LinkType The classification of the link.
+ * @return HyperlinkType The classification of the link.
  */
-static LinkType ClassifyHyperlink(const std::string &destination, bool trusted)
+static HyperlinkType ClassifyHyperlink(const std::string &destination, bool trusted)
 {
-	if (destination.empty()) return LinkType::Unknown;
-	if (StrStartsWith(destination, "#")) return LinkType::Internal;
+	if (destination.empty()) return HyperlinkType::Unknown;
+	if (destination.starts_with("#")) return HyperlinkType::Internal;
 
 	/* Only allow external / internal links for sources we trust. */
-	if (!trusted) return LinkType::Unknown;
+	if (!trusted) return HyperlinkType::Unknown;
 
-	if (StrStartsWith(destination, "http://")) return LinkType::Web;
-	if (StrStartsWith(destination, "https://")) return LinkType::Web;
-	if (StrStartsWith(destination, "./")) return LinkType::File;
-	return LinkType::Unknown;
+	if (destination.starts_with("http://")) return HyperlinkType::Web;
+	if (destination.starts_with("https://")) return HyperlinkType::Web;
+	if (destination.starts_with("./")) return HyperlinkType::File;
+	return HyperlinkType::Unknown;
 }
 
 /**
@@ -250,16 +257,16 @@ void TextfileWindow::FindHyperlinksInMarkdown(Line &line, size_t line_index)
 		link.destination = match[2].str();
 		this->links.push_back(link);
 
-		LinkType link_type = ClassifyHyperlink(link.destination, this->trusted);
+		HyperlinkType link_type = ClassifyHyperlink(link.destination, this->trusted);
 		StringControlCode link_colour;
 		switch (link_type) {
-			case LinkType::Internal:
+			case HyperlinkType::Internal:
 				link_colour = SCC_GREEN;
 				break;
-			case LinkType::Web:
+			case HyperlinkType::Web:
 				link_colour = SCC_LTBLUE;
 				break;
-			case LinkType::File:
+			case HyperlinkType::File:
 				link_colour = SCC_LTBROWN;
 				break;
 			default:
@@ -302,7 +309,7 @@ void TextfileWindow::CheckHyperlinkClick(Point pt)
 	if (this->links.empty()) return;
 
 	/* Which line was clicked. */
-	const int clicked_row = this->GetRowFromWidget(pt.y, WID_TF_BACKGROUND, WidgetDimensions::scaled.frametext.top, FONT_HEIGHT_MONO) + this->GetScrollbar(WID_TF_VSCROLLBAR)->GetPosition();
+	const int clicked_row = this->GetRowFromWidget(pt.y, WID_TF_BACKGROUND, WidgetDimensions::scaled.frametext.top, GetCharacterHeight(FS_MONO)) + this->GetScrollbar(WID_TF_VSCROLLBAR)->GetPosition();
 	size_t line_index;
 	size_t subline;
 	if (IsWidgetLowered(WID_TF_WRAPTEXT)) {
@@ -312,7 +319,7 @@ void TextfileWindow::CheckHyperlinkClick(Point pt)
 		subline = clicked_row - it->top;
 		Debug(misc, 4, "TextfileWindow check hyperlink: clicked_row={}, line_index={}, line.top={}, subline={}", clicked_row, line_index, it->top, subline);
 	} else {
-		line_index = clicked_row / FONT_HEIGHT_MONO;
+		line_index = clicked_row / GetCharacterHeight(FS_MONO);
 		subline = 0;
 	}
 
@@ -395,7 +402,7 @@ void TextfileWindow::NavigateHistory(int delta)
 /* virtual */ void TextfileWindow::OnHyperlinkClick(const Hyperlink &link)
 {
 	switch (ClassifyHyperlink(link.destination, this->trusted)) {
-		case LinkType::Internal:
+		case HyperlinkType::Internal:
 		{
 			auto it = std::find_if(this->link_anchors.cbegin(), this->link_anchors.cend(), [&](const Hyperlink &other) { return link.destination == other.destination; });
 			if (it != this->link_anchors.cend()) {
@@ -406,11 +413,11 @@ void TextfileWindow::NavigateHistory(int delta)
 			break;
 		}
 
-		case LinkType::Web:
-			OpenBrowser(link.destination.c_str());
+		case HyperlinkType::Web:
+			OpenBrowser(link.destination);
 			break;
 
-		case LinkType::File:
+		case HyperlinkType::File:
 			this->NavigateToFile(link.destination, 0);
 			break;
 
@@ -429,7 +436,7 @@ void TextfileWindow::NavigateHistory(int delta)
 void TextfileWindow::NavigateToFile(std::string newfile, size_t line)
 {
 	/* Double-check that the file link begins with ./ as a relative path. */
-	if (!StrStartsWith(newfile, "./")) return;
+	if (!newfile.starts_with("./")) return;
 
 	/* Get the path portion of the current file path. */
 	std::string newpath = this->filepath;
@@ -494,7 +501,7 @@ void TextfileWindow::NavigateToFile(std::string newfile, size_t line)
 
 	if (StrEndsWithIgnoreCase(this->filename, ".md")) this->AfterLoadMarkdown();
 
-	this->GetWidget<NWidgetStacked>(WID_TF_SEL_JUMPLIST)->SetDisplayedPlane(this->jumplist.empty() ? SZSP_HORIZONTAL : 0);
+	if (this->GetWidget<NWidgetStacked>(WID_TF_SEL_JUMPLIST)->SetDisplayedPlane(this->jumplist.empty() ? SZSP_HORIZONTAL : 0)) this->ReInit();
 }
 
 /**
@@ -517,7 +524,7 @@ void TextfileWindow::AfterLoadMarkdown()
 	}
 }
 
-/* virtual */ void TextfileWindow::OnClick([[maybe_unused]] Point pt, int widget, [[maybe_unused]] int click_count)
+/* virtual */ void TextfileWindow::OnClick([[maybe_unused]] Point pt, WidgetID widget, [[maybe_unused]] int click_count)
 {
 	switch (widget) {
 		case WID_TF_WRAPTEXT:
@@ -549,19 +556,19 @@ void TextfileWindow::AfterLoadMarkdown()
 	}
 }
 
-/* virtual */ void TextfileWindow::DrawWidget(const Rect &r, int widget) const
+/* virtual */ void TextfileWindow::DrawWidget(const Rect &r, WidgetID widget) const
 {
 	if (widget != WID_TF_BACKGROUND) return;
 
 	Rect fr = r.Shrink(WidgetDimensions::scaled.frametext);
 
 	DrawPixelInfo new_dpi;
-	if (!FillDrawPixelInfo(&new_dpi, fr.left, fr.top, fr.Width(), fr.Height())) return;
+	if (!FillDrawPixelInfo(&new_dpi, fr)) return;
 	AutoRestoreBackup dpi_backup(_cur_dpi, &new_dpi);
 
 	/* Draw content (now coordinates given to DrawString* are local to the new clipping region). */
 	fr = fr.Translate(-fr.left, -fr.top);
-	int line_height = FONT_HEIGHT_MONO;
+	int line_height = GetCharacterHeight(FS_MONO);
 	int pos = this->vscroll->GetPosition();
 	int cap = this->vscroll->GetCapacity();
 
@@ -593,7 +600,7 @@ void TextfileWindow::AfterLoadMarkdown()
 	this->SetupScrollbars(true);
 }
 
-void TextfileWindow::OnDropdownSelect(int widget, int index)
+void TextfileWindow::OnDropdownSelect(WidgetID widget, int index)
 {
 	if (widget != WID_TF_JUMPLIST) return;
 
@@ -659,10 +666,10 @@ void TextfileWindow::ScrollToLine(size_t line)
  * When decompressing fails, *bufp is set to nullptr and *sizep to 0. The
  * compressed buffer passed in is still freed in this case.
  */
-static void Gunzip(byte **bufp, size_t *sizep)
+static void Gunzip(uint8_t **bufp, size_t *sizep)
 {
 	static const int BLOCKSIZE  = 8192;
-	byte             *buf       = nullptr;
+	uint8_t          *buf       = nullptr;
 	size_t           alloc_size = 0;
 	z_stream         z;
 	int              res;
@@ -715,10 +722,10 @@ static void Gunzip(byte **bufp, size_t *sizep)
  * When decompressing fails, *bufp is set to nullptr and *sizep to 0. The
  * compressed buffer passed in is still freed in this case.
  */
-static void Xunzip(byte **bufp, size_t *sizep)
+static void Xunzip(uint8_t **bufp, size_t *sizep)
 {
 	static const int BLOCKSIZE  = 8192;
-	byte             *buf       = nullptr;
+	uint8_t          *buf       = nullptr;
 	size_t           alloc_size = 0;
 	lzma_stream      z = LZMA_STREAM_INIT;
 	int              res;
@@ -762,8 +769,7 @@ static void Xunzip(byte **bufp, size_t *sizep)
 	this->lines.clear();
 	this->jumplist.clear();
 
-	this->GetWidget<NWidgetStacked>(WID_TF_SEL_JUMPLIST)->SetDisplayedPlane(SZSP_HORIZONTAL);
-	this->ReInit();
+	if (this->GetWidget<NWidgetStacked>(WID_TF_SEL_JUMPLIST)->SetDisplayedPlane(SZSP_HORIZONTAL)) this->ReInit();
 
 	if (textfile == nullptr) return;
 
@@ -790,12 +796,12 @@ static void Xunzip(byte **bufp, size_t *sizep)
 
 #if defined(WITH_ZLIB)
 	/* In-place gunzip */
-	if (StrEndsWith(textfile, ".gz")) Gunzip((byte**)&buf, &filesize);
+	if (std::string_view(textfile).ends_with(".gz")) Gunzip((uint8_t**)&buf, &filesize);
 #endif
 
 #if defined(WITH_LIBLZMA)
 	/* In-place xunzip */
-	if (StrEndsWith(textfile, ".xz")) Xunzip((byte**)&buf, &filesize);
+	if (std::string_view(textfile).ends_with(".xz")) Xunzip((uint8_t**)&buf, &filesize);
 #endif
 
 	if (buf == nullptr) return;
@@ -803,7 +809,7 @@ static void Xunzip(byte **bufp, size_t *sizep)
 	std::string_view sv_buf(buf, filesize);
 
 	/* Check for the byte-order-mark, and skip it if needed. */
-	if (StrStartsWith(sv_buf, u8"\ufeff")) sv_buf.remove_prefix(3);
+	if (sv_buf.starts_with("\ufeff")) sv_buf.remove_prefix(3);
 
 	/* Update the filename. */
 	this->filepath = textfile;
@@ -851,6 +857,9 @@ void TextfileWindow::LoadText(std::string_view buf)
 	this->AfterLoadText();
 
 	CheckForMissingGlyphs(true, this);
+
+	/* The font may have changed when searching for glyphs, so ensure widget sizes are updated just in case. */
+	this->ReInit();
 }
 
 /**

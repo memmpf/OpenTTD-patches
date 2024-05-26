@@ -38,7 +38,7 @@ OpenTTD needs the Platform SDK, if it isn't installed already. This can be
 done during installing Visual Studio, by selecting
 `Visual C++ MFC for x86 and x64` (and possibly
 `Visual C++ ATL for x86 and x64` depending on your version). If not, you
-can get download it as [MS Windows Platform SDK](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk).
+can get download it as [MS Windows Platform SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk).
 
 Install the SDK by following the instructions as given.
 
@@ -59,8 +59,8 @@ the `static` versions, and OpenTTD currently needs the following dependencies:
 To install both the x64 (64bit) and x86 (32bit) variants (though only one is necessary), you can use:
 
 ```ps
-.\vcpkg install liblzma:x64-windows-static zstd:x64-windows-static libpng:x64-windows-static lzo:x64-windows-static zlib:x64-windows-static
-.\vcpkg install liblzma:x86-windows-static zstd:x86-windows-static libpng:x86-windows-static lzo:x86-windows-static zlib:x86-windows-static
+.\vcpkg install --triplet=x64-windows-static
+.\vcpkg install --triplet=x86-windows-static
 ```
 
 You can open the folder (as a CMake project). CMake will be detected, and you can compile from there.

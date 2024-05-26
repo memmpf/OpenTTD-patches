@@ -66,7 +66,7 @@ void CDECL strgen_error(const char *s, ...)
 	_errors++;
 }
 
-void NORETURN CDECL strgen_fatal(const char *s, ...)
+[[noreturn]] void CDECL strgen_fatal(const char *s, ...)
 {
 	char buf[1024];
 	va_list va;
@@ -80,7 +80,7 @@ void NORETURN CDECL strgen_fatal(const char *s, ...)
 	throw std::exception();
 }
 
-void NORETURN CDECL error(const char *s, ...)
+[[noreturn]] void CDECL error(const char *s, ...)
 {
 	char buf[1024];
 	va_list va;
@@ -132,7 +132,7 @@ struct FileStringReader : StringReader {
 
 	char *ReadLine(char *buffer, const char *last) override
 	{
-		char *result = fgets(buffer, ClampTo<uint16>(last - buffer + 1), this->fh);
+		char *result = fgets(buffer, ClampTo<uint16_t>(last - buffer + 1), this->fh);
 		if (result == nullptr && this->fh2 != nullptr) {
 			fclose(this->fh);
 			this->fh = this->fh2;
@@ -190,14 +190,14 @@ void FileStringReader::HandlePragma(char *str)
 		if (langid > (long)UINT16_MAX || langid < 0) {
 			error("Invalid winlangid %s", buf);
 		}
-		_lang.winlangid = (uint16)langid;
+		_lang.winlangid = (uint16_t)langid;
 	} else if (!memcmp(str, "grflangid ", 10)) {
 		const char *buf = str + 10;
 		long langid = std::strtol(buf, nullptr, 16);
 		if (langid >= 0x7F || langid < 0) {
 			error("Invalid grflangid %s", buf);
 		}
-		_lang.newgrflangid = (uint8)langid;
+		_lang.newgrflangid = (uint8_t)langid;
 	} else if (!memcmp(str, "gender ", 7)) {
 		if (this->master) error("Genders are not allowed in the base translation.");
 		char *buf = str + 7;
@@ -422,7 +422,7 @@ struct LanguageFileWriter : LanguageWriter, FileWriter {
 
 	void WriteHeader(const LanguagePackHeader *header) override
 	{
-		this->Write((const byte *)header, sizeof(*header));
+		this->Write((const uint8_t *)header, sizeof(*header));
 	}
 
 	void Finalise() override
@@ -433,7 +433,7 @@ struct LanguageFileWriter : LanguageWriter, FileWriter {
 		this->FileWriter::Finalise();
 	}
 
-	void Write(const byte *buffer, size_t length) override
+	void Write(const uint8_t *buffer, size_t length) override
 	{
 		if (length == 0) return;
 		if (fwrite(buffer, sizeof(*buffer), length, this->fh) != length) {

@@ -59,9 +59,10 @@ struct BaseSet {
 	static const char * const *file_names;
 
 	std::string name;              ///< The name of the base set
+	std::string url;               ///< URL for information about the base set
 	TranslatedStrings description; ///< Description of the base set
-	uint32 shortname;              ///< Four letter short variant of the name
-	uint32 version;                ///< The version of this base set
+	uint32_t shortname;            ///< Four letter short variant of the name
+	uint32_t version;              ///< The version of this base set
 	bool fallback;                 ///< This set is a fallback set, i.e. it should be used only as last resort
 
 	MD5File files[NUM_FILES];      ///< All files part of this set
@@ -106,19 +107,34 @@ struct BaseSet {
 	 * @param isocode the isocode to search for
 	 * @return the description
 	 */
-	const char *GetDescription(const std::string &isocode) const
+	const std::string &GetDescription(const std::string &isocode) const
 	{
 		if (!isocode.empty()) {
 			/* First the full ISO code */
 			auto desc = this->description.find(isocode);
-			if (desc != this->description.end()) return desc->second.c_str();
+			if (desc != this->description.end()) return desc->second;
 
 			/* Then the first two characters */
 			desc = this->description.find(isocode.substr(0, 2));
-			if (desc != this->description.end()) return desc->second.c_str();
+			if (desc != this->description.end()) return desc->second;
 		}
 		/* Then fall back */
-		return this->description.at(std::string{}).c_str();
+		return this->description.at(std::string{});
+	}
+
+	/**
+	 * Get string to use when listing this set in the settings window.
+	 * If there are no invalid files, then this is just the set name,
+	 * otherwise a string is formatted including the number of invalid files.
+	 * @return the string to display.
+	 */
+	std::string GetListLabel() const
+	{
+		if (this->GetNumInvalid() == 0) return this->name;
+
+		SetDParamStr(0, this->name);
+		SetDParam(1, this->GetNumInvalid());
+		return GetString(STR_BASESET_STATUS);
 	}
 
 	/**
@@ -298,7 +314,7 @@ static const uint NUM_SONGS_PLAYLIST  = 32;
 
 /* Functions to read DOS music CAT files, similar to but not quite the same as sound effect CAT files */
 char *GetMusicCatEntryName(const std::string &filename, size_t entrynum);
-byte *GetMusicCatEntryData(const std::string &filename, size_t entrynum, size_t &entrylen);
+uint8_t *GetMusicCatEntryData(const std::string &filename, size_t entrynum, size_t &entrylen);
 
 enum MusicTrackType {
 	MTT_STANDARDMIDI, ///< Standard MIDI file
@@ -308,7 +324,7 @@ enum MusicTrackType {
 /** Metadata about a music track. */
 struct MusicSongInfo {
 	std::string songname;    ///< name of song displayed in UI
-	byte tracknr;            ///< track number of song displayed in UI
+	uint8_t tracknr;         ///< track number of song displayed in UI
 	std::string filename;    ///< file on disk containing song (when used in MusicSet class)
 	MusicTrackType filetype; ///< decoder required for song file
 	int cat_index;           ///< entry index in CAT file, for filetype==MTT_MPSMIDI
@@ -322,7 +338,7 @@ struct MusicSet : BaseSet<MusicSet, NUM_SONGS_AVAILABLE, false> {
 	/** Data about individual songs in set. */
 	MusicSongInfo songinfo[NUM_SONGS_AVAILABLE];
 	/** Number of valid songs in set. */
-	byte num_available;
+	uint8_t num_available;
 
 	bool FillSetDetails(const IniFile &ini, const std::string &path, const std::string &full_filename);
 };

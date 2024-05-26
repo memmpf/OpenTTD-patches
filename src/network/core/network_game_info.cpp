@@ -27,7 +27,7 @@
 
 #include "../../safeguards.h"
 
-extern const uint8 _out_of_band_grf_md5[16];
+extern const uint8_t _out_of_band_grf_md5[16];
 
 /**
  * How many hex digits of the git hash to include in network revision string.
@@ -131,7 +131,7 @@ void CheckGameCompatibility(NetworkGameInfo &ngi, bool extended)
 void FillStaticNetworkServerGameInfo()
 {
 	_network_game_info.use_password   = !_settings_client.network.server_password.empty();
-	_network_game_info.start_date     = ConvertYMDToDate(_settings_game.game_creation.starting_year, 0, 1);
+	_network_game_info.calendar_start = CalTime::ConvertYMDToDate(_settings_game.game_creation.starting_year, 0, 1);
 	_network_game_info.clients_max    = _settings_client.network.max_clients;
 	_network_game_info.companies_max  = _settings_client.network.max_companies;
 	_network_game_info.map_width      = MapSizeX();
@@ -148,17 +148,18 @@ void FillStaticNetworkServerGameInfo()
  * Get the NetworkServerGameInfo structure with the latest information of the server.
  * @return The current NetworkServerGameInfo.
  */
-const NetworkServerGameInfo *GetCurrentNetworkServerGameInfo()
+const NetworkServerGameInfo &GetCurrentNetworkServerGameInfo()
 {
 	/* These variables are updated inside _network_game_info as if they are global variables:
 	 *  - clients_on
 	 *  - invite_code
 	 * These don't need to be updated manually here.
 	 */
-	_network_game_info.companies_on  = (byte)Company::GetNumItems();
+	_network_game_info.companies_on  = (uint8_t)Company::GetNumItems();
 	_network_game_info.spectators_on = NetworkSpectatorCount();
-	_network_game_info.game_date     = _date;
-	return &_network_game_info;
+	_network_game_info.calendar_date = CalTime::CurDate();
+	_network_game_info.ticks_playing = _scaled_tick_counter;
+	return _network_game_info;
 }
 
 /**
@@ -190,9 +191,9 @@ static void HandleIncomingNetworkGameInfoGRFConfig(GRFConfig *config, std::strin
  * @param p    the packet to write the data to.
  * @param info the NetworkGameInfo struct to serialize from.
  */
-void SerializeNetworkGameInfo(Packet *p, const NetworkServerGameInfo *info, bool send_newgrf_names)
+void SerializeNetworkGameInfo(Packet &p, const NetworkServerGameInfo &info, bool send_newgrf_names)
 {
-	p->Send_uint8 (NETWORK_GAME_INFO_VERSION);
+	p.Send_uint8 (NETWORK_GAME_INFO_VERSION);
 
 	/*
 	 *              Please observe the order.
@@ -202,13 +203,16 @@ void SerializeNetworkGameInfo(Packet *p, const NetworkServerGameInfo *info, bool
 	/* Update the documentation in game_info.h on changes
 	 * to the NetworkGameInfo wire-protocol! */
 
+	/* NETWORK_GAME_INFO_VERSION = 7 */
+	p.Send_uint64(info.ticks_playing);
+
 	/* NETWORK_GAME_INFO_VERSION = 6 */
-	p->Send_uint8(send_newgrf_names ? NST_GRFID_MD5_NAME : NST_GRFID_MD5);
+	p.Send_uint8(send_newgrf_names ? NST_GRFID_MD5_NAME : NST_GRFID_MD5);
 
 	/* NETWORK_GAME_INFO_VERSION = 5 */
 	GameInfo *game_info = Game::GetInfo();
-	p->Send_uint32(game_info == nullptr ? -1 : (uint32)game_info->GetVersion());
-	p->Send_string(game_info == nullptr ? "" : game_info->GetName());
+	p.Send_uint32(game_info == nullptr ? -1 : (uint32_t)game_info->GetVersion());
+	p.Send_string(game_info == nullptr ? "" : game_info->GetName());
 
 	/* NETWORK_GAME_INFO_VERSION = 4 */
 	{
@@ -220,48 +224,48 @@ void SerializeNetworkGameInfo(Packet *p, const NetworkServerGameInfo *info, bool
 		uint count = 0;
 
 		/* Count number of GRFs to send information about */
-		for (c = info->grfconfig; c != nullptr; c = c->next) {
+		for (c = info.grfconfig; c != nullptr; c = c->next) {
 			if (!HasBit(c->flags, GCF_STATIC)) count++;
 		}
-		p->Send_uint8(std::min<uint>(count, NETWORK_MAX_GRF_COUNT)); // Send number of GRFs
+		p.Send_uint8(ClampTo<uint8_t>(std::min<uint>(count, NETWORK_MAX_GRF_COUNT))); // Send number of GRFs
 
 		/* Send actual GRF Identifications */
-		for (c = info->grfconfig; c != nullptr; c = c->next) {
+		for (c = info.grfconfig; c != nullptr; c = c->next) {
 			if (HasBit(c->flags, GCF_STATIC)) continue;
 
-			SerializeGRFIdentifier(p, &c->ident);
-			if (send_newgrf_names) p->Send_string(c->GetName());
+			SerializeGRFIdentifier(p, c->ident);
+			if (send_newgrf_names) p.Send_string(c->GetName());
 		}
 	}
 
 	/* NETWORK_GAME_INFO_VERSION = 3 */
-	p->Send_uint32(info->game_date);
-	p->Send_uint32(info->start_date);
+	p.Send_uint32(info.calendar_date.base());
+	p.Send_uint32(info.calendar_start.base());
 
 	/* NETWORK_GAME_INFO_VERSION = 2 */
-	p->Send_uint8 (info->companies_max);
-	p->Send_uint8 (info->companies_on);
-	p->Send_uint8 (info->clients_max); // Used to be max-spectators
+	p.Send_uint8 (info.companies_max);
+	p.Send_uint8 (info.companies_on);
+	p.Send_uint8 (info.clients_max); // Used to be max-spectators
 
 	/* NETWORK_GAME_INFO_VERSION = 1 */
-	p->Send_string(info->server_name);
-	p->Send_string(info->server_revision);
-	p->Send_bool  (info->use_password);
-	p->Send_uint8 (info->clients_max);
-	p->Send_uint8 (info->clients_on);
-	p->Send_uint8 (info->spectators_on);
+	p.Send_string(info.server_name);
+	p.Send_string(info.server_revision);
+	p.Send_bool  (info.use_password);
+	p.Send_uint8 (info.clients_max);
+	p.Send_uint8 (info.clients_on);
+	p.Send_uint8 (info.spectators_on);
 
-	auto encode_map_size = [&](uint32 in) -> uint16 {
+	auto encode_map_size = [&](uint32_t in) -> uint16_t {
 		if (in < UINT16_MAX) {
 			return in;
 		} else {
 			return 65000 + FindFirstBit(in);
 		}
 	};
-	p->Send_uint16(encode_map_size(info->map_width));
-	p->Send_uint16(encode_map_size(info->map_height));
-	p->Send_uint8 (info->landscape);
-	p->Send_bool  (info->dedicated);
+	p.Send_uint16(encode_map_size(info.map_width));
+	p.Send_uint16(encode_map_size(info.map_height));
+	p.Send_uint8 (info.landscape);
+	p.Send_bool  (info.dedicated);
 }
 
 /**
@@ -269,36 +273,36 @@ void SerializeNetworkGameInfo(Packet *p, const NetworkServerGameInfo *info, bool
  * @param p    the packet to write the data to
  * @param info the NetworkGameInfo struct to serialize
  */
-void SerializeNetworkGameInfoExtended(Packet *p, const NetworkServerGameInfo *info, uint16 flags, uint16 version, bool send_newgrf_names)
+void SerializeNetworkGameInfoExtended(Packet &p, const NetworkServerGameInfo &info, uint16_t flags, uint16_t version, bool send_newgrf_names)
 {
-	version = std::max<uint16>(version, 1); // Version 1 is the max supported
+	version = std::max<uint16_t>(version, 1); // Version 1 is the max supported
 
-	p->Send_uint8(version); // version num
+	p.Send_uint8(version); // version num
 
-	p->Send_uint32(info->game_date);
-	p->Send_uint32(info->start_date);
-	p->Send_uint8 (info->companies_max);
-	p->Send_uint8 (info->companies_on);
-	p->Send_uint8 (info->clients_max); // Used to be max-spectators
-	p->Send_string(info->server_name);
-	p->Send_string(info->server_revision);
-	p->Send_uint8 (0); // Used to be server-lang.
-	p->Send_bool  (info->use_password);
-	p->Send_uint8 (info->clients_max);
-	p->Send_uint8 (info->clients_on);
-	p->Send_uint8 (info->spectators_on);
-	p->Send_string(""); // Used to be map-name.
-	p->Send_uint32(info->map_width);
-	p->Send_uint32(info->map_height);
-	p->Send_uint8 (info->landscape);
-	p->Send_bool  (info->dedicated);
+	p.Send_uint32(info.calendar_date.base());
+	p.Send_uint32(info.calendar_start.base());
+	p.Send_uint8 (info.companies_max);
+	p.Send_uint8 (info.companies_on);
+	p.Send_uint8 (info.clients_max); // Used to be max-spectators
+	p.Send_string(info.server_name);
+	p.Send_string(info.server_revision);
+	p.Send_uint8 (0); // Used to be server-lang.
+	p.Send_bool  (info.use_password);
+	p.Send_uint8 (info.clients_max);
+	p.Send_uint8 (info.clients_on);
+	p.Send_uint8 (info.spectators_on);
+	p.Send_string(""); // Used to be map-name.
+	p.Send_uint32(info.map_width);
+	p.Send_uint32(info.map_height);
+	p.Send_uint8 (info.landscape);
+	p.Send_bool  (info.dedicated);
 
 	if (version >= 1) {
 		GameInfo *game_info = Game::GetInfo();
-		p->Send_uint32(game_info == nullptr ? -1 : (uint32)game_info->GetVersion());
-		p->Send_string(game_info == nullptr ? "" : game_info->GetName());
+		p.Send_uint32(game_info == nullptr ? -1 : (uint32_t)game_info->GetVersion());
+		p.Send_string(game_info == nullptr ? "" : game_info->GetName());
 
-		p->Send_uint8(send_newgrf_names ? NST_GRFID_MD5_NAME : NST_GRFID_MD5);
+		p.Send_uint8(send_newgrf_names ? NST_GRFID_MD5_NAME : NST_GRFID_MD5);
 	}
 
 	{
@@ -310,17 +314,17 @@ void SerializeNetworkGameInfoExtended(Packet *p, const NetworkServerGameInfo *in
 		uint count = 0;
 
 		/* Count number of GRFs to send information about */
-		for (c = info->grfconfig; c != nullptr; c = c->next) {
+		for (c = info.grfconfig; c != nullptr; c = c->next) {
 			if (!HasBit(c->flags, GCF_STATIC)) count++;
 		}
-		p->Send_uint32(count); // Send number of GRFs
+		p.Send_uint32(count); // Send number of GRFs
 
 		/* Send actual GRF Identifications */
-		for (c = info->grfconfig; c != nullptr; c = c->next) {
+		for (c = info.grfconfig; c != nullptr; c = c->next) {
 			if (HasBit(c->flags, GCF_STATIC)) continue;
 
-			SerializeGRFIdentifier(p, &c->ident);
-			if (send_newgrf_names && version >= 1) p->Send_string(c->GetName());
+			SerializeGRFIdentifier(p, c->ident);
+			if (send_newgrf_names && version >= 1) p.Send_string(c->GetName());
 		}
 	}
 }
@@ -330,11 +334,11 @@ void SerializeNetworkGameInfoExtended(Packet *p, const NetworkServerGameInfo *in
  * @param p    the packet to read the data from.
  * @param info the NetworkGameInfo to deserialize into.
  */
-void DeserializeNetworkGameInfo(Packet *p, NetworkGameInfo *info, const GameInfoNewGRFLookupTable *newgrf_lookup_table)
+void DeserializeNetworkGameInfo(Packet &p, NetworkGameInfo &info, const GameInfoNewGRFLookupTable *newgrf_lookup_table)
 {
-	static const Date MAX_DATE = ConvertYMDToDate(MAX_YEAR, 11, 31); // December is month 11
+	static const CalTime::Date MAX_DATE = CalTime::ConvertYMDToDate(CalTime::MAX_YEAR, 11, 31); // December is month 11
 
-	byte game_info_version = p->Recv_uint8();
+	uint8_t game_info_version = p.Recv_uint8();
 	NewGRFSerializationType newgrf_serialisation = NST_GRFID_MD5;
 
 	/*
@@ -346,39 +350,43 @@ void DeserializeNetworkGameInfo(Packet *p, NetworkGameInfo *info, const GameInfo
 	 * to the NetworkGameInfo wire-protocol! */
 
 	switch (game_info_version) {
+		case 7:
+			info.ticks_playing = p.Recv_uint64();
+			[[fallthrough]];
+
 		case 6:
-			newgrf_serialisation = (NewGRFSerializationType)p->Recv_uint8();
+			newgrf_serialisation = (NewGRFSerializationType)p.Recv_uint8();
 			if (newgrf_serialisation >= NST_END) return;
-			FALLTHROUGH;
+			[[fallthrough]];
 
 		case 5: {
-			info->gamescript_version = (int)p->Recv_uint32();
-			info->gamescript_name = p->Recv_string(NETWORK_NAME_LENGTH);
-			FALLTHROUGH;
+			info.gamescript_version = (int)p.Recv_uint32();
+			info.gamescript_name = p.Recv_string(NETWORK_NAME_LENGTH);
+			[[fallthrough]];
 		}
 
 		case 4: {
 			/* Ensure that the maximum number of NewGRFs and the field in the network
 			 * protocol are matched to eachother. If that is not the case anymore a
 			 * check must be added to ensure the received data is still valid. */
-			static_assert(std::numeric_limits<uint8>::max() == NETWORK_MAX_GRF_COUNT);
-			uint num_grfs = p->Recv_uint8();
+			static_assert(std::numeric_limits<uint8_t>::max() == NETWORK_MAX_GRF_COUNT);
+			uint num_grfs = p.Recv_uint8();
 
-			GRFConfig **dst = &info->grfconfig;
+			GRFConfig **dst = &info.grfconfig;
 			for (uint i = 0; i < num_grfs; i++) {
 				NamedGRFIdentifier grf;
 				switch (newgrf_serialisation) {
 					case NST_GRFID_MD5:
-						DeserializeGRFIdentifier(p, &grf.ident);
+						DeserializeGRFIdentifier(p, grf.ident);
 						break;
 
 					case NST_GRFID_MD5_NAME:
-						DeserializeGRFIdentifierWithName(p, &grf);
+						DeserializeGRFIdentifierWithName(p, grf);
 						break;
 
 					case NST_LOOKUP_ID: {
 						if (newgrf_lookup_table == nullptr) return;
-						auto it = newgrf_lookup_table->find(p->Recv_uint32());
+						auto it = newgrf_lookup_table->find(p.Recv_uint32());
 						if (it == newgrf_lookup_table->end()) return;
 						grf = it->second;
 						break;
@@ -396,48 +404,48 @@ void DeserializeNetworkGameInfo(Packet *p, NetworkGameInfo *info, const GameInfo
 				*dst = c;
 				dst = &c->next;
 			}
-			FALLTHROUGH;
+			[[fallthrough]];
 		}
 
 		case 3:
-			info->game_date      = Clamp(p->Recv_uint32(), 0, MAX_DATE);
-			info->start_date     = Clamp(p->Recv_uint32(), 0, MAX_DATE);
-			FALLTHROUGH;
+			info.calendar_date  = Clamp(p.Recv_uint32(), 0, MAX_DATE.base());
+			info.calendar_start = Clamp(p.Recv_uint32(), 0, MAX_DATE.base());
+			[[fallthrough]];
 
 		case 2:
-			info->companies_max  = p->Recv_uint8 ();
-			info->companies_on   = p->Recv_uint8 ();
-			p->Recv_uint8(); // Used to contain max-spectators.
-			FALLTHROUGH;
+			info.companies_max  = p.Recv_uint8 ();
+			info.companies_on   = p.Recv_uint8 ();
+			p.Recv_uint8(); // Used to contain max-spectators.
+			[[fallthrough]];
 
 		case 1:
-			info->server_name = p->Recv_string(NETWORK_NAME_LENGTH);
-			info->server_revision = p->Recv_string(NETWORK_REVISION_LENGTH);
-			if (game_info_version < 6) p->Recv_uint8 (); // Used to contain server-lang.
-			info->use_password   = p->Recv_bool  ();
-			info->clients_max    = p->Recv_uint8 ();
-			info->clients_on     = p->Recv_uint8 ();
-			info->spectators_on  = p->Recv_uint8 ();
+			info.server_name = p.Recv_string(NETWORK_NAME_LENGTH);
+			info.server_revision = p.Recv_string(NETWORK_REVISION_LENGTH);
+			if (game_info_version < 6) p.Recv_uint8 (); // Used to contain server-lang.
+			info.use_password   = p.Recv_bool  ();
+			info.clients_max    = p.Recv_uint8 ();
+			info.clients_on     = p.Recv_uint8 ();
+			info.spectators_on  = p.Recv_uint8 ();
 			if (game_info_version < 3) { // 16 bits dates got scrapped and are read earlier
-				info->game_date    = p->Recv_uint16() + DAYS_TILL_ORIGINAL_BASE_YEAR;
-				info->start_date   = p->Recv_uint16() + DAYS_TILL_ORIGINAL_BASE_YEAR;
+				info.calendar_date  = p.Recv_uint16() + CalTime::DAYS_TILL_ORIGINAL_BASE_YEAR;
+				info.calendar_start = p.Recv_uint16() + CalTime::DAYS_TILL_ORIGINAL_BASE_YEAR;
 			}
-			if (game_info_version < 6) while (p->Recv_uint8() != 0) {} // Used to contain the map-name.
+			if (game_info_version < 6) while (p.Recv_uint8() != 0) {} // Used to contain the map-name.
 
-			auto decode_map_size = [&](uint16 in) -> uint32 {
+			auto decode_map_size = [&](uint16_t in) -> uint32_t {
 				if (in >= 65000) {
 					return 1 << (in - 65000);
 				} else {
 					return in;
 				}
 			};
-			info->map_width      = decode_map_size(p->Recv_uint16());
-			info->map_height     = decode_map_size(p->Recv_uint16());
+			info.map_width      = decode_map_size(p.Recv_uint16());
+			info.map_height     = decode_map_size(p.Recv_uint16());
 
-			info->landscape      = p->Recv_uint8 ();
-			info->dedicated      = p->Recv_bool  ();
+			info.landscape      = p.Recv_uint8 ();
+			info.dedicated      = p.Recv_bool  ();
 
-			if (info->landscape >= NUM_LANDSCAPE) info->landscape = 0;
+			if (info.landscape >= NUM_LANDSCAPE) info.landscape = 0;
 	}
 }
 
@@ -446,46 +454,46 @@ void DeserializeNetworkGameInfo(Packet *p, NetworkGameInfo *info, const GameInfo
  * @param p    the packet to read the data from
  * @param info the NetworkGameInfo to deserialize into
  */
-void DeserializeNetworkGameInfoExtended(Packet *p, NetworkGameInfo *info)
+void DeserializeNetworkGameInfoExtended(Packet &p, NetworkGameInfo &info)
 {
-	static const Date MAX_DATE = ConvertYMDToDate(MAX_YEAR, 11, 31); // December is month 11
+	static const CalTime::Date MAX_DATE = CalTime::ConvertYMDToDate(CalTime::MAX_YEAR, 11, 31); // December is month 11
 
-	const uint8 version = p->Recv_uint8();
+	const uint8_t version = p.Recv_uint8();
 	if (version > SERVER_GAME_INFO_EXTENDED_MAX_VERSION) return; // Unknown version
 
 	NewGRFSerializationType newgrf_serialisation = NST_GRFID_MD5;
 
-	info->game_date      = Clamp(p->Recv_uint32(), 0, MAX_DATE);
-	info->start_date     = Clamp(p->Recv_uint32(), 0, MAX_DATE);
-	info->companies_max  = p->Recv_uint8 ();
-	info->companies_on   = p->Recv_uint8 ();
-	p->Recv_uint8(); // Used to contain max-spectators.
-	info->server_name = p->Recv_string(NETWORK_NAME_LENGTH);
-	info->server_revision = p->Recv_string(NETWORK_LONG_REVISION_LENGTH);
-	p->Recv_uint8 (); // Used to contain server-lang.
-	info->use_password   = p->Recv_bool  ();
-	info->clients_max    = p->Recv_uint8 ();
-	info->clients_on     = p->Recv_uint8 ();
-	info->spectators_on  = p->Recv_uint8 ();
-	while (p->Recv_uint8() != 0) {} // Used to contain the map-name.
-	info->map_width      = p->Recv_uint32();
-	info->map_height     = p->Recv_uint32();
-	info->landscape      = p->Recv_uint8 ();
-	if (info->landscape >= NUM_LANDSCAPE) info->landscape = 0;
-	info->dedicated      = p->Recv_bool  ();
+	info.calendar_date  = Clamp(p.Recv_uint32(), 0, MAX_DATE.base());
+	info.calendar_start = Clamp(p.Recv_uint32(), 0, MAX_DATE.base());
+	info.companies_max  = p.Recv_uint8 ();
+	info.companies_on   = p.Recv_uint8 ();
+	p.Recv_uint8(); // Used to contain max-spectators.
+	info.server_name = p.Recv_string(NETWORK_NAME_LENGTH);
+	info.server_revision = p.Recv_string(NETWORK_LONG_REVISION_LENGTH);
+	p.Recv_uint8 (); // Used to contain server-lang.
+	info.use_password   = p.Recv_bool  ();
+	info.clients_max    = p.Recv_uint8 ();
+	info.clients_on     = p.Recv_uint8 ();
+	info.spectators_on  = p.Recv_uint8 ();
+	while (p.Recv_uint8() != 0) {} // Used to contain the map-name.
+	info.map_width      = p.Recv_uint32();
+	info.map_height     = p.Recv_uint32();
+	info.landscape      = p.Recv_uint8 ();
+	if (info.landscape >= NUM_LANDSCAPE) info.landscape = 0;
+	info.dedicated      = p.Recv_bool  ();
 
 	if (version >= 1) {
-		info->gamescript_version = (int)p->Recv_uint32();
-		info->gamescript_name = p->Recv_string(NETWORK_NAME_LENGTH);
+		info.gamescript_version = (int)p.Recv_uint32();
+		info.gamescript_name = p.Recv_string(NETWORK_NAME_LENGTH);
 
-		newgrf_serialisation = (NewGRFSerializationType)p->Recv_uint8();
+		newgrf_serialisation = (NewGRFSerializationType)p.Recv_uint8();
 		if (newgrf_serialisation >= NST_END) return;
 	}
 
 	{
-		GRFConfig **dst = &info->grfconfig;
+		GRFConfig **dst = &info.grfconfig;
 		uint i;
-		uint num_grfs = p->Recv_uint32();
+		uint num_grfs = p.Recv_uint32();
 
 		/* Broken/bad data. It cannot have that many NewGRFs. */
 		if (num_grfs > MAX_NON_STATIC_GRF_COUNT) return;
@@ -494,11 +502,11 @@ void DeserializeNetworkGameInfoExtended(Packet *p, NetworkGameInfo *info)
 			NamedGRFIdentifier grf;
 			switch (newgrf_serialisation) {
 				case NST_GRFID_MD5:
-					DeserializeGRFIdentifier(p, &grf.ident);
+					DeserializeGRFIdentifier(p, grf.ident);
 					break;
 
 				case NST_GRFID_MD5_NAME:
-					DeserializeGRFIdentifierWithName(p, &grf);
+					DeserializeGRFIdentifierWithName(p, grf);
 					break;
 
 				case NST_LOOKUP_ID: {
@@ -526,11 +534,11 @@ void DeserializeNetworkGameInfoExtended(Packet *p, NetworkGameInfo *info)
  * @param p    the packet to write the data to.
  * @param grf  the GRFIdentifier to serialize.
  */
-void SerializeGRFIdentifier(Packet *p, const GRFIdentifier *grf)
+void SerializeGRFIdentifier(Packet &p, const GRFIdentifier &grf)
 {
-	p->Send_uint32(grf->grfid);
-	for (size_t j = 0; j < grf->md5sum.size(); j++) {
-		p->Send_uint8(grf->md5sum[j]);
+	p.Send_uint32(grf.grfid);
+	for (size_t j = 0; j < grf.md5sum.size(); j++) {
+		p.Send_uint8(grf.md5sum[j]);
 	}
 }
 
@@ -539,11 +547,11 @@ void SerializeGRFIdentifier(Packet *p, const GRFIdentifier *grf)
  * @param p    the packet to read the data from.
  * @param grf  the GRFIdentifier to deserialize.
  */
-void DeserializeGRFIdentifier(Packet *p, GRFIdentifier *grf)
+void DeserializeGRFIdentifier(Packet &p, GRFIdentifier &grf)
 {
-	grf->grfid = p->Recv_uint32();
-	for (size_t j = 0; j < grf->md5sum.size(); j++) {
-		grf->md5sum[j] = p->Recv_uint8();
+	grf.grfid = p.Recv_uint32();
+	for (size_t j = 0; j < grf.md5sum.size(); j++) {
+		grf.md5sum[j] = p.Recv_uint8();
 	}
 }
 
@@ -552,8 +560,8 @@ void DeserializeGRFIdentifier(Packet *p, GRFIdentifier *grf)
  * @param p    the packet to read the data from.
  * @param grf  the NamedGRFIdentifier to deserialize.
  */
-void DeserializeGRFIdentifierWithName(Packet *p, NamedGRFIdentifier *grf)
+void DeserializeGRFIdentifierWithName(Packet &p, NamedGRFIdentifier &grf)
 {
-	DeserializeGRFIdentifier(p, &grf->ident);
-	grf->name = p->Recv_string(NETWORK_GRF_NAME_LENGTH);
+	DeserializeGRFIdentifier(p, grf.ident);
+	grf.name = p.Recv_string(NETWORK_GRF_NAME_LENGTH);
 }

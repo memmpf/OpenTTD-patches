@@ -116,7 +116,7 @@ static std::vector<SaveLoad> GetSettingsDesc(bool is_loading)
 				error("Unexpected save conv for %s: 0x%02X", sd->name, sd->save.conv);
 		}
 
-		/* economy.town_growth_rate is int8 here, but uint8 in upstream saves */
+		/* economy.town_growth_rate is int8_t here, but uint8_t in upstream saves */
 		if (is_loading && !SlXvIsFeaturePresent(XSLFI_TABLE_PATS) && strcmp(sd->name, "economy.town_growth_rate") == 0) {
 			SB(new_type, 0, 4, SLE_FILE_U8);
 		}
@@ -145,7 +145,7 @@ static std::vector<SaveLoad> GetSettingsDesc(bool is_loading)
 		}
 
 		SaveLoadAddrProc *address_proc = [](void *base, size_t extra) -> void* {
-			return const_cast<byte *>((const byte *)base + (ptrdiff_t)extra);
+			return const_cast<uint8_t *>((const uint8_t *)base + (ptrdiff_t)extra);
 		};
 		saveloads.push_back({sd->name, new_cmd, new_type, sd->save.length, SL_MIN_VERSION, SL_MAX_VERSION, sd->save.size, address_proc, reinterpret_cast<uintptr_t>(sd->save.address), nullptr});
 	}
@@ -201,9 +201,9 @@ struct PATSChunkHandler : ChunkHandler {
 
 	void Load() const override
 	{
-		/* Copy over default setting since some might not get loaded in
-		 * a networking environment. This ensures for example that the local
-		 * currency setting stays when joining a network-server */
+		/* Settings were previously reset to their defaults, so any settings missing in the savegame
+		 * are their default, and not "value of last game". AfterLoad might still fix
+		 * up values to become non-default, depending on the saveload version. */
 		LoadSettings(&_settings_game, _settings_sl_compat);
 	}
 

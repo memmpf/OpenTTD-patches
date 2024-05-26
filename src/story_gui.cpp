@@ -252,7 +252,7 @@ protected:
 	DropDownList BuildDropDownList() const
 	{
 		DropDownList list;
-		uint16 page_num = 1;
+		uint16_t page_num = 1;
 		for (const StoryPage *p : this->story_pages) {
 			bool current_page = p->index == this->selected_page_id;
 			if (!p->title.empty()) {
@@ -290,7 +290,7 @@ protected:
 		int height = 0;
 
 		/* Title lines */
-		height += FONT_HEIGHT_NORMAL; // Date always use exactly one line.
+		height += GetCharacterHeight(FS_NORMAL); // Date always use exactly one line.
 		SetDParamStr(0, !page->title.empty() ? page->title : this->selected_generic_title);
 		height += GetStringHeight(STR_STORY_BOOK_TITLE, max_width);
 
@@ -407,7 +407,7 @@ protected:
 		StoryPage *page = this->GetSelPage();
 		if (page == nullptr) return;
 		int max_width = GetAvailablePageContentWidth();
-		int element_dist = FONT_HEIGHT_NORMAL;
+		int element_dist = GetCharacterHeight(FS_NORMAL);
 
 		/* Make space for the header */
 		int main_y = GetHeadHeight(max_width) + element_dist;
@@ -428,7 +428,7 @@ protected:
 
 			if (fl == ElementFloat::None) {
 				/* Verify available width */
-				const int min_required_width = 10 * FONT_HEIGHT_NORMAL;
+				const int min_required_width = 10 * GetCharacterHeight(FS_NORMAL);
 				int left_offset = (left_width == 0) ? 0 : (left_width + element_dist);
 				int right_offset = (right_width == 0) ? 0 : (right_width + element_dist);
 				if (left_offset + right_offset + min_required_width >= max_width) {
@@ -498,12 +498,12 @@ protected:
 	 * Get the total height of the content displayed in this window.
 	 * @return the height in pixels
 	 */
-	uint GetContentHeight()
+	int32_t GetContentHeight()
 	{
 		this->EnsureStoryPageElementLayout();
 
 		/* The largest bottom coordinate of any element is the height of the content */
-		uint max_y = std::accumulate(this->layout_cache.begin(), this->layout_cache.end(), 0, [](uint max_y, const LayoutCacheElement &ce) -> uint { return std::max<uint>(max_y, ce.bounds.bottom); });
+		int32_t max_y = std::accumulate(this->layout_cache.begin(), this->layout_cache.end(), 0, [](int32_t max_y, const LayoutCacheElement &ce) -> int32_t { return std::max<int32_t>(max_y, ce.bounds.bottom); });
 
 		return max_y;
 	}
@@ -537,7 +537,7 @@ protected:
 	 * Internal event handler for when a page element is clicked.
 	 * @param pe The clicked page element.
 	 */
-	void OnPageElementClick(const StoryPageElement& pe)
+	void OnPageElementClick(const StoryPageElement &pe)
 	{
 		switch (pe.type) {
 			case SPET_TEXT:
@@ -599,7 +599,7 @@ public:
 	{
 		this->CreateNestedTree();
 		this->vscroll = this->GetScrollbar(WID_SB_SCROLLBAR);
-		this->vscroll->SetStepSize(FONT_HEIGHT_NORMAL);
+		this->vscroll->SetStepSize(GetCharacterHeight(FS_NORMAL));
 
 		/* Initialize page sort. */
 		this->story_pages.SetSortFuncs(StoryBookWindow::page_sorter_funcs);
@@ -635,7 +635,7 @@ public:
 	 * Sets the selected page.
 	 * @param page_index pool index of the page to select.
 	 */
-	void SetSelectedPage(uint16 page_index)
+	void SetSelectedPage(uint16_t page_index)
 	{
 		if (this->selected_page_id != page_index) {
 			if (this->active_button_id) ResetObjectToPlace();
@@ -646,7 +646,7 @@ public:
 		}
 	}
 
-	void SetStringParameters(int widget) const override
+	void SetStringParameters(WidgetID widget) const override
 	{
 		switch (widget) {
 			case WID_SB_SEL_PAGE: {
@@ -680,7 +680,7 @@ public:
 		this->DrawWidgets();
 	}
 
-	void DrawWidget(const Rect &r, int widget) const override
+	void DrawWidget(const Rect &r, WidgetID widget) const override
 	{
 		if (widget != WID_SB_PAGE_PANEL) return;
 
@@ -691,18 +691,18 @@ public:
 
 		/* Set up a clipping region for the panel. */
 		DrawPixelInfo tmp_dpi;
-		if (!FillDrawPixelInfo(&tmp_dpi, fr.left, fr.top, fr.Width(), fr.Height())) return;
+		if (!FillDrawPixelInfo(&tmp_dpi, fr)) return;
 
 		AutoRestoreBackup dpi_backup(_cur_dpi, &tmp_dpi);
 
 		/* Draw content (now coordinates given to Draw** are local to the new clipping region). */
 		fr = fr.Translate(-fr.left, -fr.top);
-		int line_height = FONT_HEIGHT_NORMAL;
+		int line_height = GetCharacterHeight(FS_NORMAL);
 		const int scrollpos = this->vscroll->GetPosition();
 		int y_offset = -scrollpos;
 
 		/* Date */
-		if (page->date != INVALID_DATE) {
+		if (page->date != CalTime::INVALID_DATE) {
 			SetDParam(0, page->date);
 			DrawString(0, fr.right, y_offset, STR_JUST_DATE_LONG, TC_BLACK);
 		}
@@ -754,12 +754,12 @@ public:
 		}
 	}
 
-	void UpdateWidgetSize(int widget, Dimension *size, [[maybe_unused]] const Dimension &padding, [[maybe_unused]] Dimension *fill, [[maybe_unused]] Dimension *resize) override
+	void UpdateWidgetSize(WidgetID widget, Dimension *size, [[maybe_unused]] const Dimension &padding, [[maybe_unused]] Dimension *fill, [[maybe_unused]] Dimension *resize) override
 	{
 		if (widget != WID_SB_SEL_PAGE && widget != WID_SB_PAGE_PANEL) return;
 
 		Dimension d;
-		d.height = FONT_HEIGHT_NORMAL;
+		d.height = GetCharacterHeight(FS_NORMAL);
 		d.width = 0;
 
 		switch (widget) {
@@ -804,7 +804,7 @@ public:
 		this->vscroll->SetCount(this->GetContentHeight());
 	}
 
-	void OnClick([[maybe_unused]] Point pt, int widget, [[maybe_unused]] int click_count) override
+	void OnClick([[maybe_unused]] Point pt, WidgetID widget, [[maybe_unused]] int click_count) override
 	{
 		switch (widget) {
 			case WID_SB_SEL_PAGE: {
@@ -845,7 +845,7 @@ public:
 		}
 	}
 
-	void OnDropdownSelect(int widget, int index) override
+	void OnDropdownSelect(WidgetID widget, int index) override
 	{
 		if (widget != WID_SB_SEL_PAGE) return;
 
@@ -950,7 +950,7 @@ GUIStoryPageElementList::SortFunction * const StoryBookWindow::page_element_sort
 	&PageElementOrderSorter,
 };
 
-static const NWidgetPart _nested_story_book_widgets[] = {
+static constexpr NWidgetPart _nested_story_book_widgets[] = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_BROWN),
 		NWidget(WWT_CAPTION, COLOUR_BROWN, WID_SB_CAPTION), SetDataTip(STR_JUST_STRING1, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
@@ -972,7 +972,14 @@ static const NWidgetPart _nested_story_book_widgets[] = {
 };
 
 static WindowDesc _story_book_desc(__FILE__, __LINE__,
-	WDP_CENTER, "view_story", 400, 300,
+	WDP_AUTO, "view_story", 400, 300,
+	WC_STORY_BOOK, WC_NONE,
+	0,
+	std::begin(_nested_story_book_widgets), std::end(_nested_story_book_widgets)
+);
+
+static WindowDesc _story_book_gs_desc(__FILE__, __LINE__,
+	WDP_CENTER, "view_story_gs", 400, 300,
 	WC_STORY_BOOK, WC_NONE,
 	0,
 	std::begin(_nested_story_book_widgets), std::end(_nested_story_book_widgets)
@@ -1044,11 +1051,12 @@ static CursorID TranslateStoryPageButtonCursor(StoryPageButtonCursor cursor)
  * Raise or create the story book window for \a company, at page \a page_id.
  * @param company 'Owner' of the story book, may be #INVALID_COMPANY.
  * @param page_id Page to open, may be #INVALID_STORY_PAGE.
+ * @param centered Whether to open the window centered.
  */
-void ShowStoryBook(CompanyID company, uint16 page_id)
+void ShowStoryBook(CompanyID company, uint16_t page_id, bool centered)
 {
 	if (!Company::IsValidID(company)) company = (CompanyID)INVALID_COMPANY;
 
-	StoryBookWindow *w = AllocateWindowDescFront<StoryBookWindow>(&_story_book_desc, company, true);
+	StoryBookWindow *w = AllocateWindowDescFront<StoryBookWindow>(centered ? &_story_book_gs_desc : &_story_book_desc, company, true);
 	if (page_id != INVALID_STORY_PAGE) w->SetSelectedPage(page_id);
 }

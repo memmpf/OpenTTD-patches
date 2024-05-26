@@ -14,9 +14,9 @@
 
 /** Header of a Stanard MIDI File */
 struct SMFHeader {
-	uint16 format;
-	uint16 tracks;
-	uint16 tickdiv;
+	uint16_t format;
+	uint16_t tracks;
+	uint16_t tickdiv;
 };
 
 /** MIDI status byte codes */
@@ -152,6 +152,6 @@ enum class MidiSysexMessage {
 	RolandSetReverb,
 };
 
-const byte *MidiGetStandardSysexMessage(MidiSysexMessage msg, size_t &length);
+const uint8_t *MidiGetStandardSysexMessage(MidiSysexMessage msg, size_t &length);
 
 #endif /* MUSIC_MIDI_H */

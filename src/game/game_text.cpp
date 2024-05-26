@@ -48,7 +48,7 @@ void CDECL strgen_error(const char *s, ...)
 	_errors++;
 }
 
-void NORETURN CDECL strgen_fatal(const char *s, ...)
+[[noreturn]] void CDECL strgen_fatal(const char *s, ...)
 {
 	char buf[1024];
 	va_list va;
@@ -158,7 +158,7 @@ struct TranslationWriter : LanguageWriter {
 		/* We don't write the length. */
 	}
 
-	void Write(const byte *buffer, size_t length) override
+	void Write(const uint8_t *buffer, size_t length) override
 	{
 		this->strings.emplace_back((const char *)buffer, length);
 	}
@@ -290,9 +290,15 @@ static void ExtractStringParams(const StringData &data, StringParamsList &params
 			StringParams &param = params.emplace_back();
 			ParsedCommandStruct pcs = ExtractCommandString(ls->english.c_str(), false);
 
-			for (const CmdStruct *cs : pcs.consuming_commands) {
-				if (cs == nullptr) break;
-				param.emplace_back(GetParamType(cs), cs->consumes);
+			for (auto it = pcs.consuming_commands.begin(); it != pcs.consuming_commands.end(); it++) {
+				if (*it == nullptr) {
+					/* Skip empty param unless a non empty param exist after it. */
+					if (std::all_of(it, pcs.consuming_commands.end(), [](auto cs) { return cs == nullptr; })) break;
+					param.emplace_back(StringParam::UNUSED, 1, nullptr);
+					continue;
+				}
+				const CmdStruct *cs = *it;
+				param.emplace_back(GetParamType(cs), cs->consumes, cs->cmd);
 			}
 		}
 	}
@@ -403,7 +409,7 @@ void ReconsiderGameScriptLanguage()
 	if (_current_data == nullptr) return;
 
 	char temp[MAX_PATH];
-	strecpy(temp, _current_language->file, lastof(temp));
+	strecpy(temp, _current_language->file.c_str(), lastof(temp));
 
 	/* Remove the extension */
 	char *l = strrchr(temp, '.');

@@ -59,6 +59,8 @@ static std::optional<std::string> FindGameManualFilePath(std::string_view filena
 struct GameManualTextfileWindow : public TextfileWindow {
 	GameManualTextfileWindow(std::string_view filename) : TextfileWindow(TFT_GAME_MANUAL)
 	{
+		this->ConstructWindow();
+
 		/* Mark the content of these files as trusted. */
 		this->trusted = true;
 
@@ -73,7 +75,7 @@ struct GameManualTextfileWindow : public TextfileWindow {
 		this->OnClick({ 0, 0 }, WID_TF_WRAPTEXT, 1);
 	}
 
-	void SetStringParameters(int widget) const override
+	void SetStringParameters(WidgetID widget) const override
 	{
 		if (widget == WID_TF_CAPTION) {
 			SetDParamStr(0, this->filename);
@@ -85,7 +87,7 @@ struct GameManualTextfileWindow : public TextfileWindow {
 		if (this->filename == CHANGELOG_FILENAME) {
 			this->link_anchors.clear();
 			this->AfterLoadChangelog();
-			this->GetWidget<NWidgetStacked>(WID_TF_SEL_JUMPLIST)->SetDisplayedPlane(this->jumplist.empty() ? SZSP_HORIZONTAL : 0);
+			if (this->GetWidget<NWidgetStacked>(WID_TF_SEL_JUMPLIST)->SetDisplayedPlane(this->jumplist.empty() ? SZSP_HORIZONTAL : 0)) this->ReInit();
 		} else {
 			this->TextfileWindow::AfterLoadText();
 		}
@@ -129,7 +131,7 @@ struct HelpWindow : public Window {
 		this->EnableTextfileButton(LICENSE_FILENAME, WID_HW_LICENSE);
 	}
 
-	void OnClick([[maybe_unused]] Point pt, int widget, [[maybe_unused]] int click_count) override
+	void OnClick([[maybe_unused]] Point pt, WidgetID widget, [[maybe_unused]] int click_count) override
 	{
 		switch (widget) {
 			case WID_HW_README:
@@ -145,63 +147,49 @@ struct HelpWindow : public Window {
 				new GameManualTextfileWindow(LICENSE_FILENAME);
 				break;
 			case WID_HW_WEBSITE:
-				OpenBrowser(WEBSITE_LINK.c_str());
+				OpenBrowser(WEBSITE_LINK);
 				break;
 			case WID_HW_WIKI:
-				OpenBrowser(WIKI_LINK.c_str());
+				OpenBrowser(WIKI_LINK);
 				break;
 			case WID_HW_BUGTRACKER:
-				OpenBrowser(BUGTRACKER_LINK.c_str());
+				OpenBrowser(BUGTRACKER_LINK);
 				break;
 			case WID_HW_COMMUNITY:
-				OpenBrowser(COMMUNITY_LINK.c_str());
+				OpenBrowser(COMMUNITY_LINK);
 				break;
 		}
 	}
 
 private:
-	void EnableTextfileButton(std::string_view filename, int button_widget)
+	void EnableTextfileButton(std::string_view filename, WidgetID button_widget)
 	{
 		this->GetWidget<NWidgetLeaf>(button_widget)->SetDisabled(!FindGameManualFilePath(filename).has_value());
 	}
 };
 
-static const NWidgetPart _nested_helpwin_widgets[] = {
+static constexpr NWidgetPart _nested_helpwin_widgets[] = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
 		NWidget(WWT_CAPTION, COLOUR_DARK_GREEN), SetDataTip(STR_HELP_WINDOW_CAPTION, STR_NULL),
 	EndContainer(),
 
 	NWidget(WWT_PANEL, COLOUR_DARK_GREEN),
-		NWidget(NWID_SPACER), SetMinimalSize(0, 8),
-
-		NWidget(NWID_HORIZONTAL),
-			NWidget(NWID_SPACER), SetMinimalSize(10, 0),
-
-			NWidget(NWID_VERTICAL), SetPIP(0, 2, 0),
-				NWidget(WWT_FRAME, COLOUR_DARK_GREEN), SetDataTip(STR_HELP_WINDOW_WEBSITES, STR_NULL),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_WEBSITE), SetDataTip(STR_HELP_WINDOW_MAIN_WEBSITE, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_WIKI), SetDataTip(STR_HELP_WINDOW_MANUAL_WIKI, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_BUGTRACKER), SetDataTip(STR_HELP_WINDOW_BUGTRACKER, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_COMMUNITY), SetDataTip(STR_HELP_WINDOW_COMMUNITY, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
-				EndContainer(),
+		NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0), SetPadding(WidgetDimensions::unscaled.sparse),
+			NWidget(WWT_FRAME, COLOUR_DARK_GREEN), SetDataTip(STR_HELP_WINDOW_WEBSITES, STR_NULL),
+				NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_WEBSITE), SetDataTip(STR_HELP_WINDOW_MAIN_WEBSITE, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
+				NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_WIKI), SetDataTip(STR_HELP_WINDOW_MANUAL_WIKI, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
+				NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_BUGTRACKER), SetDataTip(STR_HELP_WINDOW_BUGTRACKER, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
+				NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_COMMUNITY), SetDataTip(STR_HELP_WINDOW_COMMUNITY, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
 			EndContainer(),
 
-			NWidget(NWID_SPACER), SetMinimalSize(10, 0),
-
-			NWidget(NWID_VERTICAL), SetPIP(0, 2, 0),
-				NWidget(WWT_FRAME, COLOUR_DARK_GREEN), SetDataTip(STR_HELP_WINDOW_DOCUMENTS, STR_NULL),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_README), SetDataTip(STR_HELP_WINDOW_README, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_CHANGELOG), SetDataTip(STR_HELP_WINDOW_CHANGELOG, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_KNOWN_BUGS),SetDataTip(STR_HELP_WINDOW_KNOWN_BUGS, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_LICENSE), SetDataTip(STR_HELP_WINDOW_LICENSE, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
-				EndContainer(),
+			NWidget(WWT_FRAME, COLOUR_DARK_GREEN), SetDataTip(STR_HELP_WINDOW_DOCUMENTS, STR_NULL),
+				NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_README), SetDataTip(STR_HELP_WINDOW_README, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
+				NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_CHANGELOG), SetDataTip(STR_HELP_WINDOW_CHANGELOG, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
+				NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_KNOWN_BUGS),SetDataTip(STR_HELP_WINDOW_KNOWN_BUGS, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
+				NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_LICENSE), SetDataTip(STR_HELP_WINDOW_LICENSE, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
 			EndContainer(),
-
-			NWidget(NWID_SPACER), SetMinimalSize(10, 0),
 		EndContainer(),
-
-		NWidget(NWID_SPACER), SetMinimalSize(0, 8),
 	EndContainer(),
 };
 

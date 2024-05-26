@@ -37,16 +37,20 @@ static const SaveLoad _industry_desc[] = {
 	SLE_CONDARR(Industry, accepts_cargo,              SLE_UINT8,   3,              SLV_78, SLV_EXTEND_INDUSTRY_CARGO_SLOTS),
 	SLE_CONDARR(Industry, accepts_cargo,              SLE_UINT8,  16,             SLV_EXTEND_INDUSTRY_CARGO_SLOTS, SL_MAX_VERSION),
 	    SLE_VAR(Industry, prod_level,                 SLE_UINT8),
-	SLE_CONDARR(Industry, this_month_production,      SLE_UINT16,  2,               SL_MIN_VERSION, SLV_EXTEND_INDUSTRY_CARGO_SLOTS),
-	SLE_CONDARR(Industry, this_month_production,      SLE_UINT16, 16,             SLV_EXTEND_INDUSTRY_CARGO_SLOTS, SL_MAX_VERSION),
-	SLE_CONDARR(Industry, this_month_transported,     SLE_UINT16,  2,               SL_MIN_VERSION, SLV_EXTEND_INDUSTRY_CARGO_SLOTS),
-	SLE_CONDARR(Industry, this_month_transported,     SLE_UINT16, 16,             SLV_EXTEND_INDUSTRY_CARGO_SLOTS, SL_MAX_VERSION),
-	SLE_CONDARR(Industry, last_month_pct_transported, SLE_UINT8,   2,               SL_MIN_VERSION, SLV_EXTEND_INDUSTRY_CARGO_SLOTS),
-	SLE_CONDARR(Industry, last_month_pct_transported, SLE_UINT8,  16,             SLV_EXTEND_INDUSTRY_CARGO_SLOTS, SL_MAX_VERSION),
-	SLE_CONDARR(Industry, last_month_production,      SLE_UINT16,  2,               SL_MIN_VERSION, SLV_EXTEND_INDUSTRY_CARGO_SLOTS),
-	SLE_CONDARR(Industry, last_month_production,      SLE_UINT16, 16,             SLV_EXTEND_INDUSTRY_CARGO_SLOTS, SL_MAX_VERSION),
-	SLE_CONDARR(Industry, last_month_transported,     SLE_UINT16,  2,               SL_MIN_VERSION, SLV_EXTEND_INDUSTRY_CARGO_SLOTS),
-	SLE_CONDARR(Industry, last_month_transported,     SLE_UINT16, 16,             SLV_EXTEND_INDUSTRY_CARGO_SLOTS, SL_MAX_VERSION),
+	SLE_CONDARR(Industry, this_month_production,      SLE_FILE_U16 | SLE_VAR_U32,  2,               SL_MIN_VERSION, SLV_EXTEND_INDUSTRY_CARGO_SLOTS),
+	SLE_CONDARR_X(Industry, this_month_production,    SLE_FILE_U16 | SLE_VAR_U32, 16,             SLV_EXTEND_INDUSTRY_CARGO_SLOTS, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_INDUSTRY_CARGO_TOTALS, 0, 0)),
+	SLE_CONDARR_X(Industry, this_month_production,    SLE_UINT32,                 16,             SLV_EXTEND_INDUSTRY_CARGO_SLOTS, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_INDUSTRY_CARGO_TOTALS, 1)),
+	SLE_CONDARR(Industry, this_month_transported,     SLE_FILE_U16 | SLE_VAR_U32,  2,               SL_MIN_VERSION, SLV_EXTEND_INDUSTRY_CARGO_SLOTS),
+	SLE_CONDARR_X(Industry, this_month_transported,   SLE_FILE_U16 | SLE_VAR_U32, 16,             SLV_EXTEND_INDUSTRY_CARGO_SLOTS, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_INDUSTRY_CARGO_TOTALS, 0, 0)),
+	SLE_CONDARR_X(Industry, this_month_transported,   SLE_UINT32,                 16,             SLV_EXTEND_INDUSTRY_CARGO_SLOTS, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_INDUSTRY_CARGO_TOTALS, 1)),
+	SLE_CONDARR(Industry, last_month_pct_transported, SLE_UINT8,                   2,               SL_MIN_VERSION, SLV_EXTEND_INDUSTRY_CARGO_SLOTS),
+	SLE_CONDARR(Industry, last_month_pct_transported, SLE_UINT8,                  16,             SLV_EXTEND_INDUSTRY_CARGO_SLOTS, SL_MAX_VERSION),
+	SLE_CONDARR(Industry, last_month_production,      SLE_FILE_U16 | SLE_VAR_U32,  2,               SL_MIN_VERSION, SLV_EXTEND_INDUSTRY_CARGO_SLOTS),
+	SLE_CONDARR_X(Industry, last_month_production,    SLE_FILE_U16 | SLE_VAR_U32, 16,             SLV_EXTEND_INDUSTRY_CARGO_SLOTS, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_INDUSTRY_CARGO_TOTALS, 0, 0)),
+	SLE_CONDARR_X(Industry, last_month_production,    SLE_UINT32,                 16,             SLV_EXTEND_INDUSTRY_CARGO_SLOTS, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_INDUSTRY_CARGO_TOTALS, 1)),
+	SLE_CONDARR(Industry, last_month_transported,     SLE_FILE_U16 | SLE_VAR_U32,  2,               SL_MIN_VERSION, SLV_EXTEND_INDUSTRY_CARGO_SLOTS),
+	SLE_CONDARR_X(Industry, last_month_transported,   SLE_FILE_U16 | SLE_VAR_U32, 16,             SLV_EXTEND_INDUSTRY_CARGO_SLOTS, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_INDUSTRY_CARGO_TOTALS, 0, 0)),
+	SLE_CONDARR_X(Industry, last_month_transported,   SLE_UINT32,                 16,             SLV_EXTEND_INDUSTRY_CARGO_SLOTS, SL_MAX_VERSION, SlXvFeatureTest(XSLFTO_AND, XSLFI_INDUSTRY_CARGO_TOTALS, 1)),
 
 	    SLE_VAR(Industry, counter,                    SLE_UINT16),
 
@@ -135,53 +139,63 @@ static void Ptrs_INDY()
 }
 
 /** Description of the data to save and load in #IndustryBuildData. */
-static const SaveLoad _industry_builder_desc[] = {
-	SLEG_VAR(_industry_builder.wanted_inds, SLE_UINT32),
+static const NamedSaveLoad _industry_builder_desc[] = {
+	NSL("wanted_inds", SLEG_VAR(_industry_builder.wanted_inds, SLE_UINT32)),
 };
 
-/** Load/save industry builder. */
-static void LoadSave_IBLD()
+/** Save industry builder. */
+static void Save_IBLD()
 {
-	SlGlobList(_industry_builder_desc);
+	SlSaveTableObjectChunk(_industry_builder_desc);
+}
+
+/** Load industry builder. */
+static void Load_IBLD()
+{
+	SlLoadTableOrRiffFiltered(_industry_builder_desc);
 }
 
 /** Description of the data to save and load in #IndustryTypeBuildData. */
-static const SaveLoad _industrytype_builder_desc[] = {
-	SLE_VAR(IndustryTypeBuildData, probability,  SLE_UINT32),
-	SLE_VAR(IndustryTypeBuildData, min_number,   SLE_UINT8),
-	SLE_VAR(IndustryTypeBuildData, target_count, SLE_UINT16),
-	SLE_VAR(IndustryTypeBuildData, max_wait,     SLE_UINT16),
-	SLE_VAR(IndustryTypeBuildData, wait_count,   SLE_UINT16),
+static const NamedSaveLoad _industrytype_builder_desc[] = {
+	NSL("probability",  SLE_VAR(IndustryTypeBuildData, probability,  SLE_UINT32)),
+	NSL("min_number",   SLE_VAR(IndustryTypeBuildData, min_number,   SLE_UINT8)),
+	NSL("target_count", SLE_VAR(IndustryTypeBuildData, target_count, SLE_UINT16)),
+	NSL("max_wait",     SLE_VAR(IndustryTypeBuildData, max_wait,     SLE_UINT16)),
+	NSL("wait_count",   SLE_VAR(IndustryTypeBuildData, wait_count,   SLE_UINT16)),
 };
 
 /** Save industry-type build data. */
 static void Save_ITBL()
 {
+	std::vector<SaveLoad> sld = SlTableHeader(_industrytype_builder_desc);
+
 	for (int i = 0; i < NUM_INDUSTRYTYPES; i++) {
 		SlSetArrayIndex(i);
-		SlObject(_industry_builder.builddata + i, _industrytype_builder_desc);
+		SlObjectSaveFiltered(_industry_builder.builddata + i, sld);
 	}
 }
 
 /** Load industry-type build data. */
 static void Load_ITBL()
 {
+	std::vector<SaveLoad> sld = SlTableHeaderOrRiff(_industrytype_builder_desc);
+
 	for (IndustryType it = 0; it < NUM_INDUSTRYTYPES; it++) {
 		_industry_builder.builddata[it].Reset();
 	}
 	int index;
 	while ((index = SlIterateArray()) != -1) {
 		if ((uint)index >= NUM_INDUSTRYTYPES) SlErrorCorrupt("Too many industry builder datas");
-		SlObject(_industry_builder.builddata + index, _industrytype_builder_desc);
+		SlObjectLoadFiltered(_industry_builder.builddata + index, sld);
 	}
 }
 
 static const ChunkHandler industry_chunk_handlers[] = {
 	{ 'INDY', Save_INDY,     Load_INDY,     Ptrs_INDY, nullptr, CH_ARRAY },
-	{ 'IIDS', Save_IIDS,     Load_IIDS,     nullptr,   nullptr, CH_ARRAY },
-	{ 'TIDS', Save_TIDS,     Load_TIDS,     nullptr,   nullptr, CH_ARRAY },
-	{ 'IBLD', LoadSave_IBLD, LoadSave_IBLD, nullptr,   nullptr, CH_RIFF  },
-	{ 'ITBL', Save_ITBL,     Load_ITBL,     nullptr,   nullptr, CH_ARRAY },
+	{ 'IIDS', Save_IIDS,     Load_IIDS,     nullptr,   nullptr, CH_TABLE },
+	{ 'TIDS', Save_TIDS,     Load_TIDS,     nullptr,   nullptr, CH_TABLE },
+	{ 'IBLD', Save_IBLD,     Load_IBLD,     nullptr,   nullptr, CH_TABLE  },
+	{ 'ITBL', Save_ITBL,     Load_ITBL,     nullptr,   nullptr, CH_TABLE },
 };
 
 extern const ChunkHandlerTable _industry_chunk_handlers(industry_chunk_handlers);

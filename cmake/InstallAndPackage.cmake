@@ -23,16 +23,28 @@ install(TARGETS openttd
             COMPONENT Runtime
         )
 
-install(DIRECTORY
-                ${CMAKE_BINARY_DIR}/lang
-                ${CMAKE_BINARY_DIR}/baseset
-                ${CMAKE_BINARY_DIR}/ai
-                ${CMAKE_BINARY_DIR}/game
-                ${CMAKE_SOURCE_DIR}/bin/scripts
-        DESTINATION ${DATA_DESTINATION_DIR}
-        COMPONENT language_files
-        REGEX "ai/[^\.]+$" EXCLUDE # Ignore subdirs in ai dir
-)
+if (NOT EMSCRIPTEN)
+    # Emscripten embeds these files in openttd.data.
+    # See CMakeLists.txt in the root.
+    install(DIRECTORY
+                    ${CMAKE_BINARY_DIR}/lang
+                    ${CMAKE_BINARY_DIR}/baseset
+                    ${CMAKE_BINARY_DIR}/ai
+                    ${CMAKE_BINARY_DIR}/game
+                    ${CMAKE_SOURCE_DIR}/bin/scripts
+            DESTINATION ${DATA_DESTINATION_DIR}
+            COMPONENT language_files
+            REGEX "ai/[^\.]+$" EXCLUDE # Ignore subdirs in ai dir
+    )
+else()
+    install(FILES
+                ${CMAKE_BINARY_DIR}/openttd.js
+                ${CMAKE_BINARY_DIR}/openttd.wasm
+                ${CMAKE_BINARY_DIR}/openttd.data
+            DESTINATION ${BINARY_DESTINATION_DIR}
+            COMPONENT Runtime
+    )
+endif()
 
 install(FILES
                 ${CMAKE_SOURCE_DIR}/COPYING.md
@@ -80,7 +92,7 @@ if(OPTION_INSTALL_FHS)
             COMPONENT manual)
 endif()
 
-if(UNIX AND NOT APPLE)
+if(UNIX AND NOT APPLE AND NOT EMSCRIPTEN)
     install(DIRECTORY
                     ${CMAKE_BINARY_DIR}/media/icons
                     ${CMAKE_BINARY_DIR}/media/pixmaps
@@ -182,7 +194,7 @@ elseif(UNIX)
             OUTPUT_STRIP_TRAILING_WHITESPACE
         )
         if(LSB_RELEASE_ID)
-            if(LSB_RELEASE_ID STREQUAL "Ubuntu" OR LSB_RELEASE_ID STREQUAL "Debian")
+            if(LSB_RELEASE_ID STREQUAL "Ubuntu" OR LSB_RELEASE_ID STREQUAL "Debian" OR LSB_RELEASE_ID STREQUAL "Linuxmint")
                 execute_process(COMMAND ${LSB_RELEASE_EXEC} -cs
                     OUTPUT_VARIABLE LSB_RELEASE_CODENAME
                     OUTPUT_STRIP_TRAILING_WHITESPACE

@@ -37,22 +37,16 @@ std::optional<std::string> ScriptEventEnginePreview::GetName()
 
 CargoID ScriptEventEnginePreview::GetCargoType()
 {
-	if (!this->IsEngineValid()) return CT_INVALID;
+	if (!this->IsEngineValid()) return INVALID_CARGO;
 	CargoArray cap = ::GetCapacityOfArticulatedParts(this->engine);
 
-	CargoID most_cargo = CT_INVALID;
-	uint amount = 0;
-	for (CargoID cid = 0; cid < NUM_CARGO; cid++) {
-		if (cap[cid] > amount) {
-			amount = cap[cid];
-			most_cargo = cid;
-		}
-	}
+	auto it = std::max_element(std::cbegin(cap), std::cend(cap));
+	if (*it == 0) return INVALID_CARGO;
 
-	return most_cargo;
+	return CargoID(std::distance(std::cbegin(cap), it));
 }
 
-int32 ScriptEventEnginePreview::GetCapacity()
+int32_t ScriptEventEnginePreview::GetCapacity()
 {
 	if (!this->IsEngineValid()) return -1;
 	const Engine *e = ::Engine::Get(this->engine);
@@ -60,9 +54,8 @@ int32 ScriptEventEnginePreview::GetCapacity()
 		case VEH_ROAD:
 		case VEH_TRAIN: {
 			CargoArray capacities = GetCapacityOfArticulatedParts(this->engine);
-			for (CargoID c = 0; c < NUM_CARGO; c++) {
-				if (capacities[c] == 0) continue;
-				return capacities[c];
+			for (uint &cap : capacities) {
+				if (cap != 0) return cap;
 			}
 			return -1;
 		}
@@ -75,11 +68,11 @@ int32 ScriptEventEnginePreview::GetCapacity()
 	}
 }
 
-int32 ScriptEventEnginePreview::GetMaxSpeed()
+int32_t ScriptEventEnginePreview::GetMaxSpeed()
 {
 	if (!this->IsEngineValid()) return -1;
 	const Engine *e = ::Engine::Get(this->engine);
-	int32 max_speed = e->GetDisplayMaxSpeed(); // km-ish/h
+	int32_t max_speed = e->GetDisplayMaxSpeed(); // km-ish/h
 	if (e->type == VEH_AIRCRAFT) max_speed /= _settings_game.vehicle.plane_speed;
 	return max_speed;
 }
@@ -96,7 +89,7 @@ Money ScriptEventEnginePreview::GetRunningCost()
 	return ::Engine::Get(this->engine)->GetRunningCost();
 }
 
-int32 ScriptEventEnginePreview::GetVehicleType()
+int32_t ScriptEventEnginePreview::GetVehicleType()
 {
 	if (!this->IsEngineValid()) return ScriptVehicle::VT_INVALID;
 	switch (::Engine::Get(this->engine)->type) {

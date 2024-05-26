@@ -83,6 +83,8 @@
 		The default graphics chain for the primary vehicle may check the cargo states of the other ship parts if required.<br />
 		Additional ship parts may be refitted individually.
 		<p>This requires the <span class="code">multi_part_ships</span> feature.</p>
+
+		<p>From version 3 of the <span class="code">multi_part_ships</span> feature, spritegroup loading/loaded cargo thresholds refer to the entire ship, not just the first vehicle.</p>
 	</p>
 	<p>
 		Added callback: <span class="code">refit_part_name</span><br />
@@ -302,7 +304,7 @@
 	<tr><td>use_land_ground</td><td>0 or 1</td><td>
 		Sets whether to use the underlying ground as the object ground sprite, ignoring the ground sprite provided in the sprite layout.<br />
 		When enabled, the ground sprite will be bare ground, grass, snow, desert, etc. as if it were a clear ground tile.<br />
-		In edge foundation mode, the ground may be coast/shore when flooded.
+		In edge foundation mode, or when foundations are disabled, the ground may be coast/shore when flooded.
 	</td></tr>
 	<tr><td>edge_foundation_mode</td><td>[mode0, mode1, mode2, mode3]</td><td>
 		Enables edge foundation mode for the object.<br />
@@ -673,6 +675,13 @@ item (FEAT_GLOBALVARS) {
 			Set whether signals should be drawn on the opposite side of the track for the most recently defined style (defined using the <span class="code">define_style</span> property).
 		</td>
 	</tr>
+	<tr><td>style_both_sides</td><td>0 or 1</td>
+		<td>
+			Set whether signals should be drawn on both sides of the track for the most recently defined style (defined using the <span class="code">define_style</span> property).<br />
+			If set, the <span class="code">signal_context_is_second</span> variable is true when drawing the second signal.<br />
+			If this and <span class="code">style_opposite_side</span> are both set, the first signal is drawn on the opposite side and the second signal is drawn on the usual side.
+		</td>
+	</tr>
 	<tr><td>style_realistic_braking_only</td><td>0 or 1</td>
 		<td>
 			Set whether signals using this style may only be built when realistic braking is enabled, for the most recently defined style (defined using the <span class="code">define_style</span> property).
@@ -720,6 +729,11 @@ item (FEAT_GLOBALVARS) {
 	<tr><td>signal_context_is_tunnel</td><td>0 or 1</td>
 		<td>
 			The signal is being drawn on a tunnel entrance/exit (not a bridge)
+		</td>
+	</tr>
+	<tr><td>signal_context_is_second</td><td>0 or 1</td>
+		<td>
+			The second signal is being drawn (on the opposite side to the first signal), see the style_both_sides property
 		</td>
 	</tr>
 	<tr><td>signal_context_info</td><td></td>

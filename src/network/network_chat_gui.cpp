@@ -33,10 +33,6 @@
 
 #include "../safeguards.h"
 
-/** The draw buffer must be able to contain the chat message, client name and the "[All]" message,
- * some spaces and possible translations of [All] to other languages. */
-static_assert((int)DRAW_STRING_BUFFER >= (int)NETWORK_CHAT_LENGTH + NETWORK_NAME_LENGTH + 40);
-
 /** Spacing between chat lines. */
 static const uint NETWORK_CHAT_LINE_SPACING = 3;
 
@@ -110,8 +106,8 @@ void NetworkAddChatMessage(TextColour colour, uint duration, const std::string_v
 /** Initialize all font-dependent chat box sizes. */
 void NetworkReInitChatBoxSize()
 {
-	_chatmsg_box.y       = 3 * FONT_HEIGHT_NORMAL;
-	_chatmsg_box.height  = MAX_CHAT_MESSAGES * (FONT_HEIGHT_NORMAL + ScaleGUITrad(NETWORK_CHAT_LINE_SPACING)) + ScaleGUITrad(4);
+	_chatmsg_box.y       = 3 * GetCharacterHeight(FS_NORMAL);
+	_chatmsg_box.height  = MAX_CHAT_MESSAGES * (GetCharacterHeight(FS_NORMAL) + ScaleGUITrad(NETWORK_CHAT_LINE_SPACING)) + ScaleGUITrad(4);
 }
 
 /** Initialize all buffers of the chat visualisation. */
@@ -228,10 +224,10 @@ void NetworkDrawChatMessage()
 	for (auto &cmsg : _chatmsg_list) {
 		if (!show_all && cmsg.remove_time < now) continue;
 		SetDParamStr(0, cmsg.message);
-		string_height += GetStringLineCount(STR_JUST_RAW_STRING, width - 1) * FONT_HEIGHT_NORMAL + NETWORK_CHAT_LINE_SPACING;
+		string_height += GetStringLineCount(STR_JUST_RAW_STRING, width - 1) * GetCharacterHeight(FS_NORMAL) + NETWORK_CHAT_LINE_SPACING;
 	}
 
-	string_height = std::min<uint>(string_height, MAX_CHAT_MESSAGES * (FONT_HEIGHT_NORMAL + NETWORK_CHAT_LINE_SPACING));
+	string_height = std::min<uint>(string_height, MAX_CHAT_MESSAGES * (GetCharacterHeight(FS_NORMAL) + NETWORK_CHAT_LINE_SPACING));
 
 	int top = _screen.height - _chatmsg_box.y - string_height - 2;
 	int bottom = _screen.height - _chatmsg_box.y - 2;
@@ -420,7 +416,7 @@ struct NetworkChatWindow : public Window {
 				/* Now any match we make on _chat_tab_completion_buf after this, is perfect */
 			}
 
-			if (tb_buf.size() < cur_name.size() && StrStartsWith(cur_name, tb_buf)) {
+			if (tb_buf.size() < cur_name.size() && cur_name.starts_with(tb_buf)) {
 				/* Save the data it was before completion */
 				if (!second_scan) _chat_tab_completion_buf = tb->buf;
 				_chat_tab_completion_active = true;
@@ -446,13 +442,13 @@ struct NetworkChatWindow : public Window {
 		}
 	}
 
-	Point OnInitialPosition(int16 sm_width, int16 sm_height, int window_number) override
+	Point OnInitialPosition(int16_t sm_width, int16_t sm_height, int window_number) override
 	{
 		Point pt = { 0, _screen.height - sm_height - FindWindowById(WC_STATUS_BAR, 0)->height };
 		return pt;
 	}
 
-	void SetStringParameters(int widget) const override
+	void SetStringParameters(WidgetID widget) const override
 	{
 		if (widget != WID_NC_DESTINATION) return;
 
@@ -461,12 +457,12 @@ struct NetworkChatWindow : public Window {
 		}
 	}
 
-	void OnClick([[maybe_unused]] Point pt, int widget, [[maybe_unused]] int click_count) override
+	void OnClick([[maybe_unused]] Point pt, WidgetID widget, [[maybe_unused]] int click_count) override
 	{
 		switch (widget) {
 			case WID_NC_SENDBUTTON: /* Send */
 				SendChat(this->message_editbox.text.buf, this->dtype, this->dest);
-				FALLTHROUGH;
+				[[fallthrough]];
 
 			case WID_NC_CLOSE: /* Cancel */
 				this->Close();
@@ -474,7 +470,7 @@ struct NetworkChatWindow : public Window {
 		}
 	}
 
-	EventState OnKeyPress(WChar key, uint16 keycode) override
+	EventState OnKeyPress(char32_t key, uint16_t keycode) override
 	{
 		EventState state = ES_NOT_HANDLED;
 		if (keycode == WKC_TAB) {
@@ -484,7 +480,7 @@ struct NetworkChatWindow : public Window {
 		return state;
 	}
 
-	void OnEditboxChanged(int widget) override
+	void OnEditboxChanged(WidgetID widget) override
 	{
 		if (widget == WID_NC_TEXTBOX) {
 			_chat_tab_completion_active = false;
@@ -503,7 +499,7 @@ struct NetworkChatWindow : public Window {
 };
 
 /** The widgets of the chat window. */
-static const NWidgetPart _nested_chat_window_widgets[] = {
+static constexpr NWidgetPart _nested_chat_window_widgets[] = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_GREY, WID_NC_CLOSE),
 		NWidget(WWT_PANEL, COLOUR_GREY, WID_NC_BACKGROUND),

@@ -27,6 +27,8 @@
  * Version: Bytes:  Description:
  *   all      1       the version of this packet's structure
  *
+ *   7+       8       amount of ticks this game has been running unpaused.
+ *
  *   6+       1       type of storage for the NewGRFs below:
  *                      0 = NewGRF ID and MD5 checksum.
  *                          Used as default for version 5 and below, and for
@@ -54,8 +56,8 @@
  *                     - 4 byte lookup table index.
  *                       For v6+ in case of type 2.
  *
- *   3+       4       current game date in days since 1-1-0 (DMY)
- *   3+       4       game introduction date in days since 1-1-0 (DMY)
+ *   3+       4       current calendar date in days since 1-1-0 (DMY)
+ *   3+       4       calendar start date in days since 1-1-0 (DMY)
  *
  *   2+       1       maximum number of companies allowed on the server
  *   2+       1       number of companies on the server
@@ -92,20 +94,21 @@ enum NewGRFSerializationType {
  */
 struct NetworkServerGameInfo {
 	GRFConfig *grfconfig;        ///< List of NewGRF files used
-	Date start_date;             ///< When the game started
-	Date game_date;              ///< Current date
-	uint32 map_width;            ///< Map width
-	uint32 map_height;           ///< Map height
+	CalTime::Date calendar_start;///< When the game started.
+	CalTime::Date calendar_date; ///< Current calendar date.
+	uint64_t ticks_playing;      ///< Amount of ticks the game has been running unpaused.
+	uint32_t map_width;          ///< Map width
+	uint32_t map_height;         ///< Map height
 	std::string server_name;     ///< Server name
 	std::string server_revision; ///< The version number the server is using (e.g.: 'r304' or 0.5.0)
 	bool dedicated;              ///< Is this a dedicated server?
 	bool use_password;           ///< Is this server passworded?
-	byte clients_on;             ///< Current count of clients on server
-	byte clients_max;            ///< Max clients allowed on server
-	byte companies_on;           ///< How many started companies do we have
-	byte companies_max;          ///< Max companies allowed on server
-	byte spectators_on;          ///< How many spectators do we have?
-	byte landscape;              ///< The used landscape
+	uint8_t clients_on;          ///< Current count of clients on server
+	uint8_t clients_max;         ///< Max clients allowed on server
+	uint8_t companies_on;        ///< How many started companies do we have
+	uint8_t companies_max;       ///< Max companies allowed on server
+	uint8_t spectators_on;       ///< How many spectators do we have?
+	uint8_t landscape;           ///< The used landscape
 	int gamescript_version;      ///< Version of the gamescript.
 	std::string gamescript_name; ///< Name of the gamescript.
 };
@@ -128,7 +131,7 @@ struct NamedGRFIdentifier {
 	std::string name;    ///< The name of the NewGRF.
 };
 /** Lookup table for the GameInfo in case of #NST_LOOKUP_ID. */
-typedef std::unordered_map<uint32, NamedGRFIdentifier> GameInfoNewGRFLookupTable;
+typedef std::unordered_map<uint32_t, NamedGRFIdentifier> GameInfoNewGRFLookupTable;
 
 extern NetworkServerGameInfo _network_game_info;
 
@@ -137,15 +140,15 @@ bool IsNetworkCompatibleVersion(const char *other, bool extended = false);
 void CheckGameCompatibility(NetworkGameInfo &ngi, bool extended = false);
 
 void FillStaticNetworkServerGameInfo();
-const NetworkServerGameInfo *GetCurrentNetworkServerGameInfo();
+const NetworkServerGameInfo &GetCurrentNetworkServerGameInfo();
 
-void DeserializeGRFIdentifier(Packet *p, GRFIdentifier *grf);
-void DeserializeGRFIdentifierWithName(Packet *p, NamedGRFIdentifier *grf);
-void SerializeGRFIdentifier(Packet *p, const GRFIdentifier *grf);
+void DeserializeGRFIdentifier(Packet &p, GRFIdentifier &grf);
+void DeserializeGRFIdentifierWithName(Packet &p, NamedGRFIdentifier &grf);
+void SerializeGRFIdentifier(Packet &p, const GRFIdentifier &grf);
 
-void DeserializeNetworkGameInfo(Packet *p, NetworkGameInfo *info, const GameInfoNewGRFLookupTable *newgrf_lookup_table = nullptr);
-void DeserializeNetworkGameInfoExtended(Packet *p, NetworkGameInfo *info);
-void SerializeNetworkGameInfo(Packet *p, const NetworkServerGameInfo *info, bool send_newgrf_names = true);
-void SerializeNetworkGameInfoExtended(Packet *p, const NetworkServerGameInfo *info, uint16 flags, uint16 version, bool send_newgrf_names = true);
+void DeserializeNetworkGameInfo(Packet &p, NetworkGameInfo &info, const GameInfoNewGRFLookupTable *newgrf_lookup_table = nullptr);
+void DeserializeNetworkGameInfoExtended(Packet &p, NetworkGameInfo &info);
+void SerializeNetworkGameInfo(Packet &p, const NetworkServerGameInfo &info, bool send_newgrf_names = true);
+void SerializeNetworkGameInfoExtended(Packet &p, const NetworkServerGameInfo &info, uint16_t flags, uint16_t version, bool send_newgrf_names = true);
 
 #endif /* NETWORK_CORE_GAME_INFO_H */

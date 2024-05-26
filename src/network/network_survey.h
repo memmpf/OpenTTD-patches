@@ -12,10 +12,6 @@
 
 #include <condition_variable>
 #include <mutex>
-#if defined(__MINGW32__)
-#include "../3rdparty/mingw-std-threads/mingw.condition_variable.h"
-#include "../3rdparty/mingw-std-threads/mingw.mutex.h"
-#endif
 #include "core/http.h"
 
 /**
@@ -24,7 +20,7 @@
 class NetworkSurveyHandler : public HTTPCallback {
 protected:
 	void OnFailure() override;
-	void OnReceiveData(const char *data, size_t length) override;
+	void OnReceiveData(UniqueBuffer<char> data) override;
 	bool IsCancelled() const override { return false; }
 
 public:
@@ -50,7 +46,8 @@ public:
 
 private:
 	std::mutex mutex; ///< Mutex for the condition variable.
-	std::condition_variable loaded; ///< Condition variable to wait for the survey to be sent.
+	std::atomic<bool> transmitted; ///< Whether the survey has been transmitted.
+	std::condition_variable transmitted_cv; ///< Condition variable to inform changes to transmitted.
 };
 
 extern NetworkSurveyHandler _survey;

@@ -54,6 +54,9 @@ bool BaseSet<T, Tnum_files, Tsearch_in_tars>::FillSetDetails(const IniFile &ini,
 	fetch_metadata("description");
 	this->description[std::string{}] = *item->value;
 
+	item = metadata->GetItem("url");
+	if (item != nullptr) this->url = *item->value;
+
 	/* Add the translations of the descriptions too. */
 	for (const IniItem &titem : metadata->items) {
 		if (titem.name.compare(0, 12, "description.") != 0) continue;
@@ -63,7 +66,7 @@ bool BaseSet<T, Tnum_files, Tsearch_in_tars>::FillSetDetails(const IniFile &ini,
 
 	fetch_metadata("shortname");
 	for (uint i = 0; (*item->value)[i] != '\0' && i < 4; i++) {
-		this->shortname |= ((uint8)(*item->value)[i]) << (i * 8);
+		this->shortname |= ((uint8_t)(*item->value)[i]) << (i * 8);
 	}
 
 	fetch_metadata("version");
@@ -296,7 +299,7 @@ template <class Tbase_set>
 {
 	p += seprintf(p, last, "List of " SET_TYPE " sets:\n");
 	for (const Tbase_set *s = BaseMedia<Tbase_set>::available_sets; s != nullptr; s = s->next) {
-		p += seprintf(p, last, "%18s: %s", s->name.c_str(), s->GetDescription({}));
+		p += seprintf(p, last, "%18s: %s", s->name.c_str(), s->GetDescription({}).c_str());
 		int invalid = s->GetNumInvalid();
 		if (invalid != 0) {
 			int missing = s->GetNumMissing();
