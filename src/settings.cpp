@@ -79,6 +79,7 @@
 #include "statusbar_gui.h"
 #include "graph_gui.h"
 #include "string_func_extra.h"
+#include "engine_override.h"
 
 #include "void_map.h"
 #include "station_base.h"
@@ -163,7 +164,7 @@ void IterateSettingsTables(std::function<void(const SettingTable &, void *)> han
 	for (auto &table : _generic_setting_tables) {
 		handler(table, &_settings_game);
 	}
-	handler(_currency_settings, &_custom_currency);
+	handler(_currency_settings, &GetCustomCurrency());
 	handler(_company_settings, &_settings_client.company);
 }
 
@@ -197,6 +198,9 @@ private:
 		"newgrf",
 		"servers",
 		"server_bind_addresses",
+		"server_authorized_keys",
+		"rcon_authorized_keys",
+		"settings_authorized_keys",
 	};
 
 public:
@@ -2763,7 +2767,7 @@ static void HandleSettingDescs(IniFile &generic_ini, SettingDescProc *proc, Sett
 		proc(generic_ini, table, "patches", &_settings_newgame, only_startup);
 	}
 
-	proc(generic_ini, _currency_settings, "currency", &_custom_currency, only_startup);
+	proc(generic_ini, _currency_settings, "currency", &GetCustomCurrency(), only_startup);
 	proc(generic_ini, _company_settings, "company", &_settings_client.company, only_startup);
 
 }
@@ -2778,6 +2782,9 @@ static void HandlePrivateSettingDescs(IniFile &private_ini, SettingDescProc *pro
 		proc_list(private_ini, "server_bind_addresses", _network_bind_list);
 		proc_list(private_ini, "servers", _network_host_list);
 		proc_list(private_ini, "bans", _network_ban_list);
+		proc_list(private_ini, "server_authorized_keys", _settings_client.network.server_authorized_keys);
+		proc_list(private_ini, "rcon_authorized_keys", _settings_client.network.rcon_authorized_keys);
+		proc_list(private_ini, "settings_authorized_keys", _settings_client.network.settings_authorized_keys);
 	}
 }
 
@@ -2975,7 +2982,7 @@ void LoadFromConfig(bool startup)
 		if (FindWindowById(WC_ERRMSG, 0) == nullptr) ShowFirstError();
 	} else {
 		PostTransparencyOptionLoad();
-		if (_fallback_gui_zoom_max && _settings_client.gui.zoom_max <= ZOOM_LVL_OUT_32X) {
+		if (_fallback_gui_zoom_max && _settings_client.gui.zoom_max <= ZOOM_LVL_OUT_8X) {
 			_settings_client.gui.zoom_max = ZOOM_LVL_MAX;
 		}
 	}
@@ -3699,21 +3706,6 @@ static const SaveLoad _settings_ext_load_desc[] = {
 };
 
 /**
- * Internal structure used in SaveSettingsPlyx()
- */
-struct SettingsExtSave {
-	uint32_t flags;
-	const char *name;
-	uint32_t setting_length;
-};
-
-static const SaveLoad _settings_ext_save_desc[] = {
-	SLE_VAR(SettingsExtSave, flags,          SLE_UINT32),
-	SLE_STR(SettingsExtSave, name,           SLE_STR, 0),
-	SLE_VAR(SettingsExtSave, setting_length, SLE_UINT32),
-};
-
-/**
  * Load handler for settings which go in the PATX chunk
  * @param object can be either nullptr in which case we load global variables or
  * a pointer to a struct which is getting saved
@@ -3858,65 +3850,17 @@ void LoadSettingsPlyx(bool skip)
 	}
 }
 
-/**
- * Save handler for settings which go in the PLYX chunk
- */
-void SaveSettingsPlyx()
+std::vector<NamedSaveLoad> FillPlyrExtraSettingsDesc()
 {
-	SettingsExtSave current_setting;
+	std::vector<NamedSaveLoad> settings_desc;
 
-	std::vector<uint32_t> company_setting_counts;
-
-	size_t length = 8;
-	uint32_t companies_count = 0;
-
-	for (Company *c : Company::Iterate()) {
-		length += 12;
-		companies_count++;
-		uint32_t setting_count = 0;
-		for (auto &sd : _company_settings) {
-			if (sd->patx_name == nullptr) continue;
-			uint32_t setting_length = (uint32_t)SlCalcObjMemberLength(&(c->settings), sd->save);
-			if (!setting_length) continue;
-
-			current_setting.name = sd->patx_name;
-
-			// add length of setting header
-			length += SlCalcObjLength(&current_setting, _settings_ext_save_desc);
-
-			// add length of actual setting
-			length += setting_length;
-
-			setting_count++;
-		}
-		company_setting_counts.push_back(setting_count);
-	}
-	SlSetLength(length);
-
-	SlWriteUint32(0);                          // flags
-	SlWriteUint32(companies_count);            // companies count
-
-	size_t index = 0;
-	for (Company *c : Company::Iterate()) {
-		length += 12;
-		companies_count++;
-		SlWriteUint32(c->index);               // company ID
-		SlWriteUint32(0);                      // flags
-		SlWriteUint32(company_setting_counts[index]); // setting count
-		index++;
-
-		for (auto &sd : _company_settings) {
-			if (sd->patx_name == nullptr) continue;
-			uint32_t setting_length = (uint32_t)SlCalcObjMemberLength(&(c->settings), sd->save);
-			if (!setting_length) continue;
-
-			current_setting.flags = 0;
-			current_setting.name = sd->patx_name;
-			current_setting.setting_length = setting_length;
-			SlObject(&current_setting, _settings_ext_save_desc);
-			SlObjectMember(&(c->settings), sd->save);
+	for (auto &sd : _company_settings) {
+		if (sd->patx_name != nullptr) {
+			settings_desc.push_back(NSL(sd->patx_name, sd->save));
 		}
 	}
+
+	return settings_desc;
 }
 
 static void Load_OPTS()
@@ -3953,9 +3897,9 @@ static void Check_PATX()
 }
 
 static const ChunkHandler setting_chunk_handlers[] = {
-	{ 'OPTS', nullptr,   Load_OPTS, nullptr, nullptr,    CH_RIFF },
+	{ 'OPTS', nullptr,   Load_OPTS, nullptr, nullptr,    CH_READONLY },
 	MakeSaveUpstreamFeatureConditionalLoadUpstreamChunkHandler<'PATS', XSLFI_TABLE_PATS>(Load_PATS, nullptr, Check_PATS),
-	{ 'PATX', nullptr,   Load_PATX, nullptr, Check_PATX, CH_RIFF },
+	{ 'PATX', nullptr,   Load_PATX, nullptr, Check_PATX, CH_READONLY },
 };
 
 extern const ChunkHandlerTable _setting_chunk_handlers(setting_chunk_handlers);

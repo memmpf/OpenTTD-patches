@@ -12,63 +12,71 @@
 #include "saveload.h"
 #include <vector>
 
-/** stub save header struct */
-struct LongBridgeSignalStorageStub {
-	uint32_t length;
+static const NamedSaveLoad _long_bridge_signal_storage_desc[] = {
+	NSL("signal_red_bits", SLE_VARVEC(LongBridgeSignalStorage, signal_red_bits, SLE_UINT64)),
 };
 
-static const SaveLoad _long_bridge_signal_storage_stub_desc[] = {
-	SLE_VAR(LongBridgeSignalStorageStub, length, SLE_UINT32),
+struct BridgeSignalStyleMapStub {
+	std::vector<uint32_t> signal_style_map;
+};
+
+static const NamedSaveLoad _bridge_signal_style_map_desc[] = {
+	NSL("signal_style_map", SLE_VARVEC(BridgeSignalStyleMapStub, signal_style_map, SLE_UINT32)),
 };
 
 static void Load_XBSS()
 {
+	SaveLoadTableData slt = SlTableHeaderOrRiff(_long_bridge_signal_storage_desc);
+
 	int index;
-	LongBridgeSignalStorageStub stub;
 	while ((index = SlIterateArray()) != -1) {
 		LongBridgeSignalStorage &lbss = _long_bridge_signal_sim_map[index];
-		SlObject(&stub, _long_bridge_signal_storage_stub_desc);
-		lbss.signal_red_bits.resize(stub.length);
-		SlArray(lbss.signal_red_bits.data(), stub.length, SLE_UINT64);
+		SlObjectLoadFiltered(&lbss, slt);
 	}
-}
-
-static void RealSave_XBSS(const LongBridgeSignalStorage *lbss)
-{
-	LongBridgeSignalStorageStub stub;
-	stub.length = (uint32_t)lbss->signal_red_bits.size();
-	SlObject(&stub, _long_bridge_signal_storage_stub_desc);
-	SlArray(const_cast<uint64_t*>(lbss->signal_red_bits.data()), stub.length, SLE_UINT64);
 }
 
 static void Save_XBSS()
 {
-	for (const auto &it : _long_bridge_signal_sim_map) {
-		const LongBridgeSignalStorage &lbss = it.second;
+	SaveLoadTableData slt = SlTableHeader(_long_bridge_signal_storage_desc);
+
+	for (auto &it : _long_bridge_signal_sim_map) {
+		LongBridgeSignalStorage &lbss = it.second;
 		SlSetArrayIndex(it.first);
-		SlAutolength((AutolengthProc*) RealSave_XBSS, const_cast<LongBridgeSignalStorage*>(&lbss));
+		SlObjectSaveFiltered(&lbss, slt);
 	}
 }
 
 static void Load_XBST()
 {
-	size_t count = SlGetFieldLength() / sizeof(uint32_t);
-	for (size_t i = 0; i < count; i++) {
-		_bridge_signal_style_map.insert(SlReadUint32());
+	if (SlIsTableChunk()) {
+		SaveLoadTableData slt = SlTableHeader(_bridge_signal_style_map_desc);
+		BridgeSignalStyleMapStub stub{};
+		SlLoadTableObjectChunk(slt, &stub);
+		_bridge_signal_style_map.insert(stub.signal_style_map.begin(), stub.signal_style_map.end());
+	} else {
+		size_t count = SlGetFieldLength() / sizeof(uint32_t);
+		for (size_t i = 0; i < count; i++) {
+			_bridge_signal_style_map.insert(SlReadUint32());
+		}
 	}
 }
 
 static void Save_XBST()
 {
-	SlSetLength(_bridge_signal_style_map.size() * sizeof(uint32_t));
+	SaveLoadTableData slt = SlTableHeader(_bridge_signal_style_map_desc);
+
+	SlSetArrayIndex(0);
+	const size_t count = _bridge_signal_style_map.size();
+	SlSetLength(SlGetGammaLength(count) + (count * 4));
+	SlWriteSimpleGamma(count);
 	for (uint32_t val : _bridge_signal_style_map) {
 		SlWriteUint32(val);
 	}
 }
 
 extern const ChunkHandler bridge_signal_chunk_handlers[] = {
-	{ 'XBSS', Save_XBSS, Load_XBSS, nullptr, nullptr, CH_SPARSE_ARRAY },
-	{ 'XBST', Save_XBST, Load_XBST, nullptr, nullptr, CH_RIFF },
+	{ 'XBSS', Save_XBSS, Load_XBSS, nullptr, nullptr, CH_SPARSE_TABLE },
+	{ 'XBST', Save_XBST, Load_XBST, nullptr, nullptr, CH_TABLE },
 };
 
 extern const ChunkHandlerTable _bridge_signal_chunk_handlers(bridge_signal_chunk_handlers);
